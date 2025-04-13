@@ -54,8 +54,8 @@ class Messages(db.Model):
     message = db.Column(db.String, nullable = False)
     timestamp = db.Column(db.DateTime, default = datetime.utcnow, nullable = False)
 
-    user = db.relationship('users', backref='messages')
-    room = db.relationship('rooms', backref='messages')
+    user = db.relationship('Users', backref='messages')
+    room = db.relationship('Rooms', backref='messages')
 
     def __repr__(self):
         return f"<Message {self.message} from user {self.uid} in room {self.rid}>"
