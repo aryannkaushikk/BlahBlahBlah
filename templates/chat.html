@@ -98,6 +98,7 @@
             list.innerHTML = '';
 
             userList.forEach(user => {
+                console.log("User Added");
                 const item = document.createElement('li');
                 const span = document.createElement('span');
                 span.textContent = user;
@@ -135,10 +136,6 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         });
 
-        socket.on('user_list', function(userList){
-
-        })
-
         socket.on('message', function(data){
             const isMe = data.username === username;
             const chatBox = document.createElement('div');
@@ -171,6 +168,7 @@
 
         socket.on('load_msg', function(data){
             data.forEach(element => {
+                console.log("Message Added");
                 const isMe = element.username === username;
             const chatBox = document.createElement('div');
             const user = document.createElement('h6');
