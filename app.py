@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///chat.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -54,6 +54,11 @@ class Messages(db.Model):
 
     def __repr__(self):
         return f"<Message {self.message} from user {self.uid} in room {self.rid}>"
+    
+@app.route("/init-db")
+def init_db():
+    db.create_all()
+    return "DB initialized"
 
 @app.route('/', methods = ['GET','POST'])
 def start():
