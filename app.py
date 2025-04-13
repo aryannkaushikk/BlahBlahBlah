@@ -5,7 +5,7 @@ from flask_socketio import SocketIO, emit, leave_room, send, join_room
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -151,7 +151,7 @@ def left(data):
             db.session.commit()
         except Exception as e:
             print("❌ DB Write Failed:", e)
-            
+
     leave_room(room.rid)
     emit('left',username, to=room.rid)
 
