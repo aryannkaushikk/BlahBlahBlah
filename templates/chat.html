@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+
+    <title>Chat Room</title>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+          
+          <div>
+            <div class="dropdown">
+              <button class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                Users
+              </button>
+              <ul class="dropdown-menu dropdown-menu-dark">
+              </ul>
+            </div>
+          </div>
+      
+          <div>
+            <h2 class="text-white m-0">Chat Room</h2>
+          </div>
+      
+          <div>
+            <button class="btn btn-outline-primary" id="logout">Logout</button>
+          </div>
+      
+        </div>
+      </nav>
+      
+    
+    
+    <div style="position: relative; height: 90vh">
+
+        <div class="p-3 overflow-auto" id="chat-box" style="height: calc(100% - 60px); position: relative;">
+        </div>
+
+        <form class="d-flex position-absolute bottom-0 start-0 end-0 p-3">
+            <input class="form-control me-2" type="text" placeholder="Enter a Message">
+            <button class="btn btn-outline-success" type="submit">Send</button>
+        </form>
+    </div>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+
+        window.onload = () => {
+            document.querySelector("form input").focus();
+        };
+
+        const username = localStorage.getItem("username");
+        const roomname = localStorage.getItem("roomname");
+        if (!username || !roomname) {
+            window.location.href = "/";
+        }
+
+        const socket = io();
+
+        socket.emit('join', {username, roomname});
+
+        const form = document.querySelector('form');
+        const input = document.querySelector('input');
+        const chatContainer = document.querySelector("#chat-box");
+        const lgbtn = document.querySelector('#logout');
+        const title = document.querySelector('h2');
+        title.textContent = roomname;
+
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+
+            const message = input.value;
+
+            if(message.trim() != ''){
+                socket.emit('message', {
+                    text: message,
+                    username: username,
+                    roomname: roomname
+                });
+                input.value = '';
+            }
+        });
+
+        lgbtn.addEventListener('click', (e)=>{
+            e.preventDefault();
+            socket.emit('left', {
+                username: username,
+                roomname: roomname
+            });
+            localStorage.removeItem("username");
+            window.location.href = '/';
+        });
+
+        socket.on('user_list', function(userList) {
+            const list = document.querySelector('ul');
+            list.innerHTML = '';
+
+            userList.forEach(user => {
+                const item = document.createElement('li');
+                const span = document.createElement('span');
+                span.textContent = user;
+                span.classList.add("dropdown-item-text");
+                item.appendChild(span);
+                list.appendChild(item);
+            });
+        })
+
+        socket.on('join', function(username) {
+            const joinAlert = document.createElement('div');
+            joinAlert.textContent = username+" has joined the room";
+            joinAlert.style.width = "max-content";
+            joinAlert.style.maxWidth = "75%";
+            joinAlert.style.borderRadius = "12px";
+            joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
+            joinAlert.classList.add("mx-auto");
+            joinAlert.style.backgroundColor = "black";
+            joinAlert.style.color = "white";
+            chatContainer.appendChild(joinAlert);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        socket.on('left', function(username) {
+            const leftAlert = document.createElement('div');
+            leftAlert.textContent = username+" has left the room";
+            leftAlert.style.width = "max-content";
+            leftAlert.style.maxWidth = "75%";
+            leftAlert.style.borderRadius = "12px";
+            leftAlert.className = "d-block m-2 p-2 text-wrap text-break";
+            leftAlert.classList.add("mx-auto");
+            leftAlert.style.backgroundColor = "black";
+            leftAlert.style.color = "white";
+            chatContainer.appendChild(leftAlert);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        socket.on('user_list', function(userList){
+
+        })
+
+        socket.on('message', function(data){
+            const isMe = data.username === username;
+            const chatBox = document.createElement('div');
+            const user = document.createElement('h6');
+            const msg = document.createElement('p');
+            
+            user.textContent = data.username;
+            msg.textContent = data.text;
+
+            chatBox.appendChild(user);
+            chatBox.appendChild(msg);
+            
+            chatBox.style.width = "max-content";
+            chatBox.style.maxWidth = "75%";
+            chatBox.style.borderRadius = "12px";
+            chatBox.className = "d-block m-2 p-2 text-wrap text-break";
+
+            if(isMe){
+                chatBox.classList.add("ms-auto");
+                chatBox.style.backgroundColor = "lightgreen"; 
+            }else{
+                chatBox.style.backgroundColor = "darkgrey";
+                chatBox.style.color = "white";
+            }
+
+            chatContainer.appendChild(chatBox);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+
+        socket.on('load_msg', function(data){
+            data.forEach(element => {
+                const isMe = element.username === username;
+            const chatBox = document.createElement('div');
+            const user = document.createElement('h6');
+            const msg = document.createElement('p');
+            
+            user.textContent = element.username;
+            msg.textContent = element.text;
+
+            chatBox.appendChild(user);
+            chatBox.appendChild(msg);
+            
+            chatBox.style.width = "max-content";
+            chatBox.style.maxWidth = "75%";
+            chatBox.style.borderRadius = "12px";
+            chatBox.className = "d-block m-2 p-2 text-wrap text-break";
+
+            if(isMe){
+                chatBox.classList.add("ms-auto");
+                chatBox.style.backgroundColor = "lightgreen"; 
+            }else{
+                chatBox.style.backgroundColor = "darkgrey";
+                chatBox.style.color = "white";
+            }
+
+            chatContainer.appendChild(chatBox);
+            chatContainer.scrollTop = chatContainer.scrollHeight; 
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+
+</body>
+</html>
