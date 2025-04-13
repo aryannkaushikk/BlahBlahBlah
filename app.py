@@ -19,7 +19,7 @@ db = SQLAlchemy(app)
 
 class Users(db.Model):
     
-    __tablename__ = "Users"
+    __tablename__ = "users"
 
     uid = db.Column(db.String, primary_key = True)
     username = db.Column(db.String, nullable = False, unique = True)
@@ -29,7 +29,7 @@ class Users(db.Model):
     
 class Rooms(db.Model):
     
-    __tablename__ = "Rooms"
+    __tablename__ = "rooms"
 
     rid = db.Column(db.String, primary_key = True)
     roomname = db.Column(db.String, nullable = False, unique = True)
@@ -39,23 +39,23 @@ class Rooms(db.Model):
     
 class UserRoom(db.Model):
     
-    __tablename__ = "UserRoom"
+    __tablename__ = "userroom"
 
-    uid = db.Column(db.String, db.ForeignKey('Users.uid'), primary_key = True)
-    rid = db.Column(db.String, db.ForeignKey('Rooms.rid'), primary_key = True)
+    uid = db.Column(db.String, db.ForeignKey('users.uid'), primary_key = True)
+    rid = db.Column(db.String, db.ForeignKey('rooms.rid'), primary_key = True)
     
 class Messages(db.Model):
     
-    __tablename__ = "Messages"
+    __tablename__ = "messages"
 
     mid = db.Column(db.String, primary_key = True)
-    uid = db.Column(db.String, db.ForeignKey('Users.uid'), nullable = False)
-    rid = db.Column(db.String, db.ForeignKey('Rooms.rid'), nullable = False)
+    uid = db.Column(db.String, db.ForeignKey('users.uid'), nullable = False)
+    rid = db.Column(db.String, db.ForeignKey('rooms.rid'), nullable = False)
     message = db.Column(db.String, nullable = False)
     timestamp = db.Column(db.DateTime, default = datetime.utcnow, nullable = False)
 
-    user = db.relationship('Users', backref='messages')
-    room = db.relationship('Rooms', backref='messages')
+    user = db.relationship('users', backref='messages')
+    room = db.relationship('rooms', backref='messages')
 
     def __repr__(self):
         return f"<Message {self.message} from user {self.uid} in room {self.rid}>"
