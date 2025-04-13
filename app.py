@@ -54,11 +54,6 @@ class Messages(db.Model):
 
     def __repr__(self):
         return f"<Message {self.message} from user {self.uid} in room {self.rid}>"
-    
-@app.route("/init-db")
-def init_db():
-    db.create_all()
-    return "DB initialized"
 
 @app.route('/', methods = ['GET','POST'])
 def start():
@@ -78,9 +73,12 @@ def get_message(data):
     msg = data["text"]
     
     new_msg = Messages(mid = 'MID'+ str(Messages.query.count() + 1), uid = uid, rid = rid, timestamp = datetime.utcnow(), message = msg)
-    db.session.add(new_msg)
-    db.session.commit()
-    
+    try:
+        db.session.add(new_msg)
+        db.session.commit()
+    except Exception as e:
+        print("❌ DB Write Failed:", e)
+
     send(data, to=rid)
 
 
@@ -93,23 +91,32 @@ def join(data):
 
     if not room:
         new_room = Rooms(rid = 'RID' + str(Rooms.query.count() + 1), roomname = roomname)
-        db.session.add(new_room)
-        db.session.commit()
-        room = new_room
+        try: 
+            db.session.add(new_room)
+            db.session.commit()
+            room = new_room
+        except Exception as e:
+            print("❌ DB Write Failed:", e)
 
     user = Users.query.filter_by(username = username).first()
     if not user:
         new_user = Users(uid = 'UID' + str(Users.query.count() + 1), username = username)
-        db.session.add(new_user)
-        db.session.commit()
-        user = new_user
+        try: 
+            db.session.add(new_user)
+            db.session.commit()
+            user = new_user
+        except Exception as e:
+            print("❌ DB Write Failed:", e)
 
     new = False
     if not UserRoom.query.filter_by(rid = room.rid, uid = user.uid).first():
         user_room = UserRoom(uid = user.uid, rid = room.rid)
-        db.session.add(user_room)
-        db.session.commit()
-        new = True
+        try:
+            db.session.add(user_room)
+            db.session.commit()
+            new = True
+        except Exception as e:
+            print("❌ DB Write Failed:", e)
 
     join_room(room.rid)
 
@@ -139,9 +146,12 @@ def left(data):
 
     if room and user:
         user_room = UserRoom.query.filter_by(uid = user.uid, rid = room.rid).first()
-        db.session.delete(user_room)
-        db.session.commit()
-    
+        try:
+            db.session.delete(user_room)
+            db.session.commit()
+        except Exception as e:
+            print("❌ DB Write Failed:", e)
+            
     leave_room(room.rid)
     emit('left',username, to=room.rid)
 
