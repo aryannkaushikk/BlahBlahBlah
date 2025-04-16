@@ -34,15 +34,19 @@
       
     
     
-    <div style="position: relative; height: 90vh">
+    <div style="position: relative; height: 90vh;">
 
         <div class="p-3 overflow-auto" id="chat-box" style="height: calc(100% - 60px); position: relative;">
         </div>
 
-        <form class="d-flex position-absolute bottom-0 start-0 end-0 p-3">
-            <input class="form-control me-2" type="text" placeholder="Enter a Message">
-            <button class="btn btn-outline-success" type="submit">Send</button>
-        </form>
+
+        <div class="d-flex flex-column position-absolute start-0 bottom-0 end-0 mx-3">
+            <div id="typing" class="" style="min-height: 1.5em;"></div>
+            <form class="d-flex mt-2">
+                <input class="form-control me-2" type="text" placeholder="Enter a Message">
+                <button class="btn btn-outline-success" type="submit">Send</button>
+            </form>
+        </div>
     </div>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
@@ -66,6 +70,7 @@
         const chatContainer = document.querySelector("#chat-box");
         const lgbtn = document.querySelector('#logout');
         const title = document.querySelector('h2');
+        const typing = document.querySelector('#typing');
         title.textContent = roomname;
 
         form.addEventListener('submit', function(e){
@@ -80,6 +85,9 @@
                     roomname: roomname
                 });
                 input.value = '';
+                socket.emit('stop_typing', {
+                    username: username,
+                    roomname: roomname});
             }
         });
 
@@ -93,12 +101,38 @@
             window.location.href = '/';
         });
 
+        let typingTimeout;
+
+        input.addEventListener('input', (e)=>{
+            clearTimeout(typingTimeout);
+
+            if(input.value.length>0){
+                socket.emit('typing', {
+                    username: username,
+                    roomname: roomname});
+
+                typingTimeout = setTimeout(() => {
+                    socket.emit('stop_typing', {
+                    username: username,
+                    roomname: roomname});    
+                }, 5000);
+            }else{
+                socket.emit('stop_typing', {
+                    username: username,
+                    roomname: roomname});
+            }
+        });
+
+        socket.on('typing_list', function(userList) {
+            list = userList.filter(name => name!==username);
+            typing.textContent = list.length > 0 ? `${list.join(', ')} typing...` : "";
+        });
+
         socket.on('user_list', function(userList) {
             const list = document.querySelector('ul');
             list.innerHTML = '';
 
             userList.forEach(user => {
-                console.log("User Added");
                 const item = document.createElement('li');
                 const span = document.createElement('span');
                 span.textContent = user;
@@ -168,7 +202,6 @@
 
         socket.on('load_msg', function(data){
             data.forEach(element => {
-                console.log("Message Added");
                 const isMe = element.username === username;
             const chatBox = document.createElement('div');
             const user = document.createElement('h6');

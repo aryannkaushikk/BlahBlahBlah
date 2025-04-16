@@ -144,7 +144,8 @@ def join(data):
                     } for msg in messages]
 
     emit('load_msg',msg_data, to=request.sid)
-
+    userList = list(redis_client.smembers(f"user_typing:{room.rid}"))
+    emit('typing_list',userList,to=room.rid)
 
     if(new):
         emit('join',username, to=room.rid)
@@ -191,7 +192,32 @@ def left(data):
         print("❌ Redis List Failed:", e)
     emit('user_list', userList ,to=room.rid)
 
+#User Typing
+@socketio.on('typing')
+def typing(data):
+    username = data["username"]
+    roomname = data["roomname"]
+    rid = Rooms.query.filter_by(roomname = roomname).first().rid
+    try:
+        redis_client.sadd(f"user_typing:{rid}", username)
+    except Exception as e:
+        print("❌ Redis Add Failed:", e)
+    userList = list(redis_client.smembers(f"user_typing:{rid}"))
+    emit('typing_list',userList,to=rid)
 
+#User Stop Typing
+@socketio.on('stop_typing')
+def stop_typing(data):
+    username = data["username"]
+    roomname = data["roomname"]
+    rid = Rooms.query.filter_by(roomname = roomname).first().rid;
+    try:
+        redis_client.srem(f"user_typing:{rid}", username)
+    except Exception as e:
+        print("❌ Redis Remove Failed:", e)
+    
+    userList = list(redis_client.smembers(f"user_typing:{rid}"))
+    emit('typing_list',userList,to=rid)
 
 #App Running
 if __name__ == '__main__':
