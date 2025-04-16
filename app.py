@@ -4,18 +4,23 @@ from flask import Flask, redirect, render_template, request
 from flask_socketio import SocketIO, emit, leave_room, send, join_room
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+import redis
 
-load_dotenv()
+redis_client = redis.StrictRedis(host='localhost', port=6379, decode_responses=True) #Redis Initialisation
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+load_dotenv() #.env files loading
 
-app = Flask(__name__)
-socketio = SocketIO(app)
+DATABASE_URL = os.getenv('DATABASE_URL') #DB URL
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app = Flask(__name__) #App Initialisation
+socketio = SocketIO(app) #Socket Initialisation
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL") #DB Configuration
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+db = SQLAlchemy(app) #Creating instance of DB
+
+#DB SECTION
 
 class Users(db.Model):
     
@@ -59,18 +64,24 @@ class Messages(db.Model):
 
     def __repr__(self):
         return f"<Message {self.message} from user {self.uid} in room {self.rid}>"
+    
+#DB SECTION
 
+
+#Join Page
 @app.route('/', methods = ['GET','POST'])
 def start():
     if request.method=='POST':
         return redirect('/chat')
     return render_template("join.html")
 
+
+#Chat Page
 @app.route('/chat')
 def chat():
     return render_template("chat.html")
 
-
+#Message BroadCasting
 @socketio.on('message')
 def get_message(data):
     uid = Users.query.filter_by(username = data["username"]).first().uid
@@ -87,6 +98,7 @@ def get_message(data):
     send(data, to=rid)
 
 
+#User Joining
 @socketio.on('join')
 def join(data):
     roomname = data["roomname"]
@@ -136,10 +148,19 @@ def join(data):
 
     if(new):
         emit('join',username, to=room.rid)
-    user_in_room = UserRoom.query.filter_by(rid = room.rid).all()    
-    userList = [Users.query.get(user.uid).username for user in user_in_room]
+        try:
+            redis_client.sadd(f"online_users:{room.rid}", username)
+        except Exception as e:
+            print("❌ Redis Add Failed:", e)
+    userList = []
+    try:
+        userList = list(redis_client.smembers(f"online_users:{room.rid}"))
+    except Exception as e:
+        print("❌ Redis List Failed:", e)
     emit('user_list', userList ,to=room.rid)
 
+
+#User Leaving
 @socketio.on('left')
 def left(data):
     roomname = data["roomname"]
@@ -159,12 +180,19 @@ def left(data):
 
     leave_room(room.rid)
     emit('left',username, to=room.rid)
-
-    user_in_room = UserRoom.query.filter_by(rid = room.rid).all()
-    userList = [Users.query.get(user.uid).username for user in user_in_room]
-
+    try:
+        redis_client.srem(f"online_users:{room.rid}",username)
+    except Exception as e:
+        print("❌ Redis Remove Failed:", e)
+    userList = []
+    try:
+        userList = list(redis_client.smembers(f"online_users:{room.rid}"))
+    except Exception as e:
+        print("❌ Redis List Failed:", e)
     emit('user_list', userList ,to=room.rid)
 
 
+
+#App Running
 if __name__ == '__main__':
     socketio.run(app, port=8080, debug=True)
