@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-from flask import Flask, redirect, render_template, request
+from flask import Flask, json, redirect, render_template, request
 from flask_socketio import SocketIO, emit, leave_room, send, join_room
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
@@ -147,15 +147,16 @@ def join(data):
     emit('load_msg',msg_data, to=request.sid)
     userTyping = list(redis_client.smembers(f"user_typing:{room.rid}"))
     emit('typing_list',userTyping,to=room.rid)
+    redis_client.set(f"sid:{request.sid}", json.dumps({"username":username, "rid": room.rid}))
 
     if(new):
-        emit('join',username, to=room.rid)
+        emit('join',username, to=room.rid, broadcast=True, include_self=False)
         try:
             redis_client.sadd(f"room_users:{room.rid}", username)
         except Exception as e:
             print("❌ Redis Add Failed:", e)
     else:
-        emit('online',username,to=room.rid)
+        emit('online',username,to=room.rid, broadcast=True, include_self=False)
     
     userList = []
     onlineUsers = []
@@ -186,7 +187,7 @@ def left(data):
             print("❌ DB Write Failed:", e)
 
     leave_room(room.rid)
-    emit('left',username, to=room.rid)
+    emit('left',username, to=room.rid, broadcast=True, include_self=False)
     try:
         redis_client.srem(f"online_users:{room.rid}",username)
         redis_client.srem(f"room_users:{room.rid}",username)
@@ -218,7 +219,7 @@ def changeRoom(data):
         redis_client.delete(f"online_users:{rid}")
 
     leave_room(rid)
-    emit('offline',username, to=rid)
+    emit('offline',username, to=rid, broadcast=True, include_self=False)
     userList = []
     onlineUsers = []
     try:
@@ -228,6 +229,32 @@ def changeRoom(data):
         print("❌ Redis List Failed:", e)
     emit('user_list', {"userList": userList, "onlineUsers":onlineUsers} ,to=rid)
 
+#User Disconnected
+@socketio.on('disconnect')
+def disconnect():
+    value = redis_client.get(f"sid:{request.sid}")
+    if value:
+        info = json.loads(value)
+        username = info["username"]
+        rid = info["rid"]
+        redis_client.srem(f"online_users:{rid}", username)
+
+        if redis_client.scard(f"online_users:{rid}")==0:
+            redis_client.delete(f"online_users:{rid}")
+
+        leave_room(rid)
+        emit('offline',username, to=rid, broadcast=True, include_self=False)
+    
+        userList = []
+        onlineUsers = []
+        try:
+            userList = list(redis_client.smembers(f"room_users:{rid}"))
+            onlineUsers = list(redis_client.smembers(f"online_users:{rid}"))
+        except Exception as e:
+            print("❌ Redis List Failed:", e)
+        emit('user_list', {"userList": userList, "onlineUsers":onlineUsers} ,to=rid)
+        emit('disconnect', to=request.sid)
+    
 
 #User Typing
 @socketio.on('typing')

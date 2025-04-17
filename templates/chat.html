@@ -173,6 +173,11 @@
             });
         });
 
+
+        window.addEventListener('beforeunload', function() {
+            localStorage.removeItem("username");
+        });
+
         socket.on('online', function(username) {
             const joinAlert = document.createElement('div');
             joinAlert.textContent = username+" is online";
