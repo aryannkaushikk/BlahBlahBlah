@@ -26,7 +26,8 @@
           </div>
       
           <div>
-            <button class="btn btn-outline-danger" id="logout">Logout</button>
+            <button class="btn btn-outline-danger" id="leave_room">Leave Room</button>
+            <button class="btn btn-outline-warning" id="change_room">Change Room</button>
           </div>
       
         </div>
@@ -68,7 +69,8 @@
         const form = document.querySelector('form');
         const input = document.querySelector('input');
         const chatContainer = document.querySelector("#chat-box");
-        const lgbtn = document.querySelector('#logout');
+        const changeRoom = document.querySelector('#change_room');
+        const leaveRoom = document.querySelector('#leave_room');
         const title = document.querySelector('h2');
         const typing = document.querySelector('#typing');
         title.textContent = roomname;
@@ -91,13 +93,22 @@
             }
         });
 
-        lgbtn.addEventListener('click', (e)=>{
+        leaveRoom.addEventListener('click', (e)=>{
             e.preventDefault();
             socket.emit('left', {
                 username: username,
                 roomname: roomname
             });
             localStorage.removeItem("username");
+            window.location.href = '/';
+        });
+
+        changeRoom.addEventListener('click', (e)=>{
+            e.preventDefault();
+            socket.emit('change_room', {
+                username: username,
+                roomname: roomname
+            });
             window.location.href = '/';
         });
 
@@ -128,19 +139,67 @@
             typing.textContent = list.length > 0 ? `${list.join(', ')} typing...` : "";
         });
 
-        socket.on('user_list', function(userList) {
+        socket.on('user_list', function(data) {
+
+            const userList = data.userList;
+            const onlineUsers = data.onlineUsers;
+            const otherUsers = userList.filter(item => !onlineUsers.includes(item))
             const list = document.querySelector('ul');
             list.innerHTML = '';
 
-            userList.forEach(user => {
+            onlineUsers.forEach(user => {
                 const item = document.createElement('li');
                 const span = document.createElement('span');
+                const status = document.createElement('span');
+                status.textContent = "🟢";
                 span.textContent = user;
-                span.classList.add("dropdown-item-text");
+                
+                item.className = "dropdown-item-text d-flex justify-content-between";
                 item.appendChild(span);
+                item.appendChild(status);
                 list.appendChild(item);
             });
-        })
+
+            otherUsers.forEach(user => {
+                const item = document.createElement('li');
+                const span = document.createElement('span');
+                const status = document.createElement('span');
+                status.textContent = "🔴";
+                span.textContent = user;
+                item.className = "dropdown-item-text d-flex justify-content-between";
+                item.appendChild(span);
+                item.appendChild(status);
+                list.appendChild(item);
+            });
+        });
+
+        socket.on('online', function(username) {
+            const joinAlert = document.createElement('div');
+            joinAlert.textContent = username+" is online";
+            joinAlert.style.width = "max-content";
+            joinAlert.style.maxWidth = "75%";
+            joinAlert.style.borderRadius = "12px";
+            joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
+            joinAlert.classList.add("mx-auto");
+            joinAlert.style.backgroundColor = "black";
+            joinAlert.style.color = "white";
+            chatContainer.appendChild(joinAlert);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        socket.on('offline', function(username) {
+            const joinAlert = document.createElement('div');
+            joinAlert.textContent = username+" went offline";
+            joinAlert.style.width = "max-content";
+            joinAlert.style.maxWidth = "75%";
+            joinAlert.style.borderRadius = "12px";
+            joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
+            joinAlert.classList.add("mx-auto");
+            joinAlert.style.backgroundColor = "black";
+            joinAlert.style.color = "white";
+            chatContainer.appendChild(joinAlert);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
 
         socket.on('join', function(username) {
             const joinAlert = document.createElement('div');

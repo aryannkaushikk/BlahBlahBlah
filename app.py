@@ -136,6 +136,7 @@ def join(data):
             print("❌ DB Write Failed:", e)
 
     join_room(room.rid)
+    redis_client.sadd(f"online_users:{room.rid}", username)
 
     messages = Messages.query.filter_by(rid = room.rid).order_by(Messages.timestamp).all()
     msg_data = [{
@@ -144,21 +145,26 @@ def join(data):
                     } for msg in messages]
 
     emit('load_msg',msg_data, to=request.sid)
-    userList = list(redis_client.smembers(f"user_typing:{room.rid}"))
-    emit('typing_list',userList,to=room.rid)
+    userTyping = list(redis_client.smembers(f"user_typing:{room.rid}"))
+    emit('typing_list',userTyping,to=room.rid)
 
     if(new):
         emit('join',username, to=room.rid)
         try:
-            redis_client.sadd(f"online_users:{room.rid}", username)
+            redis_client.sadd(f"room_users:{room.rid}", username)
         except Exception as e:
             print("❌ Redis Add Failed:", e)
+    else:
+        emit('online',username,to=room.rid)
+    
     userList = []
+    onlineUsers = []
     try:
-        userList = list(redis_client.smembers(f"online_users:{room.rid}"))
+        userList = list(redis_client.smembers(f"room_users:{room.rid}"))
+        onlineUsers = list(redis_client.smembers(f"online_users:{room.rid}"))
     except Exception as e:
         print("❌ Redis List Failed:", e)
-    emit('user_list', userList ,to=room.rid)
+    emit('user_list', {"userList": userList, "onlineUsers":onlineUsers} ,to=room.rid)
 
 
 #User Leaving
@@ -183,14 +189,45 @@ def left(data):
     emit('left',username, to=room.rid)
     try:
         redis_client.srem(f"online_users:{room.rid}",username)
+        redis_client.srem(f"room_users:{room.rid}",username)
+        if redis_client.scard(f"online_users:{room.rid}")==0:
+            redis_client.delete(f"online_users:{room.rid}")
+        if redis_client.scard(f"room_users:{room.rid}")==0:
+            redis_client.delete(f"room_users:{room.rid}")
     except Exception as e:
         print("❌ Redis Remove Failed:", e)
+    
     userList = []
+    onlineUsers = []
     try:
-        userList = list(redis_client.smembers(f"online_users:{room.rid}"))
+        userList = list(redis_client.smembers(f"room_users:{room.rid}"))
+        onlineUsers = list(redis_client.smembers(f"online_users:{room.rid}"))
     except Exception as e:
         print("❌ Redis List Failed:", e)
-    emit('user_list', userList ,to=room.rid)
+    emit('user_list', {"userList": userList, "onlineUsers": onlineUsers} ,to=room.rid)
+
+#User Changing Room
+@socketio.on('change_room')
+def changeRoom(data):
+    username = data["username"]
+    roomname = data["roomname"]
+    rid = Rooms.query.filter_by(roomname = roomname).first().rid
+
+    redis_client.srem(f"online_users:{rid}",username)
+    if redis_client.scard(f"online_users:{rid}")==0:
+        redis_client.delete(f"online_users:{rid}")
+
+    leave_room(rid)
+    emit('offline',username, to=rid)
+    userList = []
+    onlineUsers = []
+    try:
+        userList = list(redis_client.smembers(f"room_users:{rid}"))
+        onlineUsers = list(redis_client.smembers(f"online_users:{rid}"))
+    except Exception as e:
+        print("❌ Redis List Failed:", e)
+    emit('user_list', {"userList": userList, "onlineUsers":onlineUsers} ,to=rid)
+
 
 #User Typing
 @socketio.on('typing')
