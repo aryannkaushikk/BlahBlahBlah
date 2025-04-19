@@ -1,0 +1,8 @@
+#chat-box {
+    overflow-y: scroll;
+    scrollbar-width: none;       
+}
+ 
+#chat-box::-webkit-scrollbar {
+    display: none;
+}

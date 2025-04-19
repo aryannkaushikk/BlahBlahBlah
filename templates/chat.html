@@ -1,302 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
-
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="../static/chat.css">
     <title>Chat Room</title>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-          
-          <div>
-            <div class="dropdown">
-              <button class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                Users
-              </button>
-              <ul class="dropdown-menu dropdown-menu-dark">
-              </ul>
-            </div>
-          </div>
-      
-          <div>
-            <h2 class="text-white m-0">Chat Room</h2>
-          </div>
-      
-          <div>
-            <button class="btn btn-outline-danger" id="leave_room">Leave Room</button>
-            <button class="btn btn-outline-warning" id="change_room">Change Room</button>
-          </div>
-      
-        </div>
-      </nav>
-      
-    
-    
-    <div style="position: relative; height: 90vh;">
-
-        <div class="p-3 overflow-auto" id="chat-box" style="height: calc(100% - 60px); position: relative;">
-        </div>
-
-
-        <div class="d-flex flex-column position-absolute start-0 bottom-0 end-0 mx-3">
-            <div id="typing" class="" style="min-height: 1.5em;"></div>
-            <form class="d-flex mt-2">
-                <input class="form-control me-2" type="text" placeholder="Enter a Message">
-                <button class="btn btn-outline-success" type="submit">Send</button>
-            </form>
-        </div>
+  </head>
+  <body>
+    <div
+      class="offcanvas offcanvas-end"
+      data-bs-scroll="true"
+      tabindex="-1"
+      id="offcanvasWithBothOptions"
+      aria-labelledby="offcanvasWithBothOptionsLabel"
+    >
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">User</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="offcanvas-body d-flex flex-column-reverse">
+        <button class="btn btn-outline-danger my-2" id="leave_room">
+          Leave Room
+        </button>
+        <button class="btn btn-outline-warning my-2" id="change_room">
+          Change Room
+        </button>
+      </div>
     </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+      <div
+        class="container-fluid d-flex justify-content-between align-items-center"
+      >
+        <div>
+          <div class="dropdown">
+            <button
+              class="btn btn-dark dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Users
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark"></ul>
+          </div>
+        </div>
+
+        <h2 class="text-white position-absolute top-50 start-50 translate-middle m-0">
+          Chat Room
+        </h2>
+
+        <div>
+          <button
+            class="btn btn-outline-light"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#offcanvasWithBothOptions"
+            aria-controls="offcanvasWithBothOptions"
+          >
+            ☰
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <main style="position: relative; height: 90vh">
+      <div
+        class="p-3 overflow-auto"
+        id="chat-box"
+        style="height: calc(100% - 60px); position: relative"
+      ></div>
+
+      <div
+        class="d-flex flex-column position-absolute start-0 bottom-0 end-0 px-3"
+      >
+        <div id="typing" class="" style="min-height: 1.5em"></div>
+        <form class="d-flex mt-2">
+          <input
+            class="form-control me-3"
+            type="text"
+            placeholder="Enter a Message"
+          />
+          <button class="btn btn-outline-success d-flex align-items-center gap-1" type="submit">
+            <span>Send</span>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 width="16" height="16"
+                 fill="currentColor"
+                 class="bi bi-send-fill"
+                 viewBox="0 0 16 16">
+              <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471z"/>
+            </svg>
+          </button>                 
+        </form>
+      </div>
+    </main>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-
-        window.onload = () => {
-            document.querySelector("form input").focus();
-        };
-
-        const username = localStorage.getItem("username");
-        const roomname = localStorage.getItem("roomname");
-        if (!username || !roomname) {
-            window.location.href = "/";
-        }
-
-        const socket = io();
-
-        socket.emit('join', {username, roomname});
-
-        const form = document.querySelector('form');
-        const input = document.querySelector('input');
-        const chatContainer = document.querySelector("#chat-box");
-        const changeRoom = document.querySelector('#change_room');
-        const leaveRoom = document.querySelector('#leave_room');
-        const title = document.querySelector('h2');
-        const typing = document.querySelector('#typing');
-        title.textContent = roomname;
-
-        form.addEventListener('submit', function(e){
-            e.preventDefault();
-
-            const message = input.value;
-
-            if(message.trim() != ''){
-                socket.emit('message', {
-                    text: message,
-                    username: username,
-                    roomname: roomname
-                });
-                input.value = '';
-                socket.emit('stop_typing', {
-                    username: username,
-                    roomname: roomname});
-            }
-        });
-
-        leaveRoom.addEventListener('click', (e)=>{
-            e.preventDefault();
-            socket.emit('left', {
-                username: username,
-                roomname: roomname
-            });
-            localStorage.removeItem("username");
-            window.location.href = '/';
-        });
-
-        changeRoom.addEventListener('click', (e)=>{
-            e.preventDefault();
-            socket.emit('change_room', {
-                username: username,
-                roomname: roomname
-            });
-            window.location.href = '/';
-        });
-
-        let typingTimeout;
-
-        input.addEventListener('input', (e)=>{
-            clearTimeout(typingTimeout);
-
-            if(input.value.length>0){
-                socket.emit('typing', {
-                    username: username,
-                    roomname: roomname});
-
-                typingTimeout = setTimeout(() => {
-                    socket.emit('stop_typing', {
-                    username: username,
-                    roomname: roomname});    
-                }, 5000);
-            }else{
-                socket.emit('stop_typing', {
-                    username: username,
-                    roomname: roomname});
-            }
-        });
-
-        socket.on('typing_list', function(userList) {
-            list = userList.filter(name => name!==username);
-            typing.textContent = list.length > 0 ? `${list.join(', ')} typing...` : "";
-        });
-
-        socket.on('user_list', function(data) {
-
-            const userList = data.userList;
-            const onlineUsers = data.onlineUsers;
-            const otherUsers = userList.filter(item => !onlineUsers.includes(item))
-            const list = document.querySelector('ul');
-            list.innerHTML = '';
-
-            onlineUsers.forEach(user => {
-                const item = document.createElement('li');
-                const span = document.createElement('span');
-                const status = document.createElement('span');
-                status.textContent = "🟢";
-                span.textContent = user;
-                
-                item.className = "dropdown-item-text d-flex justify-content-between";
-                item.appendChild(span);
-                item.appendChild(status);
-                list.appendChild(item);
-            });
-
-            otherUsers.forEach(user => {
-                const item = document.createElement('li');
-                const span = document.createElement('span');
-                const status = document.createElement('span');
-                status.textContent = "🔴";
-                span.textContent = user;
-                item.className = "dropdown-item-text d-flex justify-content-between";
-                item.appendChild(span);
-                item.appendChild(status);
-                list.appendChild(item);
-            });
-        });
-
-
-        window.addEventListener('beforeunload', function() {
-            localStorage.removeItem("username");
-        });
-
-        socket.on('online', function(username) {
-            const joinAlert = document.createElement('div');
-            joinAlert.textContent = username+" is online";
-            joinAlert.style.width = "max-content";
-            joinAlert.style.maxWidth = "75%";
-            joinAlert.style.borderRadius = "12px";
-            joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
-            joinAlert.classList.add("mx-auto");
-            joinAlert.style.backgroundColor = "black";
-            joinAlert.style.color = "white";
-            chatContainer.appendChild(joinAlert);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-        socket.on('offline', function(username) {
-            const joinAlert = document.createElement('div');
-            joinAlert.textContent = username+" went offline";
-            joinAlert.style.width = "max-content";
-            joinAlert.style.maxWidth = "75%";
-            joinAlert.style.borderRadius = "12px";
-            joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
-            joinAlert.classList.add("mx-auto");
-            joinAlert.style.backgroundColor = "black";
-            joinAlert.style.color = "white";
-            chatContainer.appendChild(joinAlert);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-        socket.on('join', function(username) {
-            const joinAlert = document.createElement('div');
-            joinAlert.textContent = username+" has joined the room";
-            joinAlert.style.width = "max-content";
-            joinAlert.style.maxWidth = "75%";
-            joinAlert.style.borderRadius = "12px";
-            joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
-            joinAlert.classList.add("mx-auto");
-            joinAlert.style.backgroundColor = "black";
-            joinAlert.style.color = "white";
-            chatContainer.appendChild(joinAlert);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-        socket.on('left', function(username) {
-            const leftAlert = document.createElement('div');
-            leftAlert.textContent = username+" has left the room";
-            leftAlert.style.width = "max-content";
-            leftAlert.style.maxWidth = "75%";
-            leftAlert.style.borderRadius = "12px";
-            leftAlert.className = "d-block m-2 p-2 text-wrap text-break";
-            leftAlert.classList.add("mx-auto");
-            leftAlert.style.backgroundColor = "black";
-            leftAlert.style.color = "white";
-            chatContainer.appendChild(leftAlert);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-        socket.on('message', function(data){
-            const isMe = data.username === username;
-            const chatBox = document.createElement('div');
-            const user = document.createElement('h6');
-            const msg = document.createElement('p');
-            
-            user.textContent = data.username;
-            msg.textContent = data.text;
-
-            chatBox.appendChild(user);
-            chatBox.appendChild(msg);
-            
-            chatBox.style.width = "max-content";
-            chatBox.style.maxWidth = "75%";
-            chatBox.style.borderRadius = "12px";
-            chatBox.className = "d-block m-2 p-2 text-wrap text-break";
-
-            if(isMe){
-                chatBox.classList.add("ms-auto");
-                chatBox.style.backgroundColor = "lightgreen"; 
-            }else{
-                chatBox.style.backgroundColor = "darkgrey";
-                chatBox.style.color = "white";
-            }
-
-            chatContainer.appendChild(chatBox);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-
-        socket.on('load_msg', function(data){
-            data.forEach(element => {
-                const isMe = element.username === username;
-            const chatBox = document.createElement('div');
-            const user = document.createElement('h6');
-            const msg = document.createElement('p');
-            
-            user.textContent = element.username;
-            msg.textContent = element.text;
-
-            chatBox.appendChild(user);
-            chatBox.appendChild(msg);
-            
-            chatBox.style.width = "max-content";
-            chatBox.style.maxWidth = "75%";
-            chatBox.style.borderRadius = "12px";
-            chatBox.className = "d-block m-2 p-2 text-wrap text-break";
-
-            if(isMe){
-                chatBox.classList.add("ms-auto");
-                chatBox.style.backgroundColor = "lightgreen"; 
-            }else{
-                chatBox.style.backgroundColor = "darkgrey";
-                chatBox.style.color = "white";
-            }
-
-            chatContainer.appendChild(chatBox);
-            chatContainer.scrollTop = chatContainer.scrollHeight; 
-            });
-        });
-    </script>
+    <script src="../static/chat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
-
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+  </body>
 </html>
