@@ -5,9 +5,8 @@ if (!username || !roomname) {
 }
 
 window.onload = () => {
-
-const x = document.querySelector('nav').offsetHeight;
-document.querySelector('main').style.marginTop = x+'px';
+  const x = document.querySelector("nav").offsetHeight;
+  document.querySelector("main").style.marginTop = x + "px";
   document.querySelector("#offcanvasWithBothOptionsLabel").textContent =
     username;
   document.querySelector("form input").focus();
