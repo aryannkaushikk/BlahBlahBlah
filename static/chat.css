@@ -6,3 +6,12 @@
 #chat-box::-webkit-scrollbar {
   display: none;
 }
+
+.message-body{
+  white-space: pre-wrap;
+}
+
+textarea{
+  overflow-y: scroll;
+  scrollbar-width: none;
+}

@@ -4,31 +4,74 @@ if (!username || !roomname) {
   window.location.href = "/";
 }
 
-window.onload = () => {
-  const x = document.querySelector("nav").offsetHeight;
-  document.querySelector("main").style.marginTop = x + "px";
-  document.querySelector("#offcanvasWithBothOptionsLabel").textContent =
-    username;
-  document.querySelector("form input").focus();
-};
-
-const socket = io();
-
-socket.emit("join", { username, roomname });
-
-const form = document.querySelector("form");
-const input = document.querySelector("input");
+const input = document.querySelector("#chat-input");
+const form = input.closest('form');
 const chatContainer = document.querySelector("#chat-box");
 const changeRoom = document.querySelector("#change_room");
 const leaveRoom = document.querySelector("#leave_room");
 const title = document.querySelector("h2");
 const typing = document.querySelector("#typing");
+const navBar = document.querySelector("nav");
+const inputBar = document.querySelector("#input-bar");
 title.textContent = roomname;
+let inputHeight = 0;
+let chatBoxOrignalHeight = 0;
+window.onload = () => {
+  inputHeight = input.scrollHeight;
+  const navHeight = navBar.offsetHeight;
+  const inputBarHeight = inputBar.offsetHeight;
+  
+  const inputBarPadding = parseFloat(window.getComputedStyle(document.querySelector("#input-bar")).paddingTop);
+  const totalHeight = window.innerHeight;
+  const remainingHeight = totalHeight - inputBarHeight - inputBarPadding*2;
+
+  chatContainer.style.marginTop = navHeight + "px";
+  chatContainer.style.height = remainingHeight + "px";
+  chatBoxOrignalHeight = remainingHeight;
+
+  document.querySelector("#offcanvasWithBothOptionsLabel").textContent = username;
+  document.querySelector("form textarea").focus();
+};
+
+
+const socket = io();
+
+socket.emit("join", { username, roomname });
+
+
+input.addEventListener("input", function () {
+  this.style.height = "auto";
+  const lineHeight = parseFloat(getComputedStyle(this).lineHeight);
+  const maxHeight = lineHeight * 5;
+
+  const newHeight = Math.min(this.scrollHeight, maxHeight);
+
+  if (newHeight !== inputHeight) {
+    const diff = newHeight - inputHeight;
+    const currentHeight = parseFloat(chatContainer.style.height);
+    chatContainer.style.height = (currentHeight - diff) + "px";
+    inputHeight = newHeight;
+  }
+
+  this.style.height = newHeight + "px";
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+});
+
+
+input.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();  // Prevent newline
+    form.requestSubmit(); // Submit form
+  }
+});
+
 
 form.addEventListener("submit", function (e) {
   e.preventDefault();
 
   const message = input.value;
+  console.log(message);
+  console.log(message.trim());
 
   if (message.trim() != "") {
     socket.emit("message", {
@@ -41,6 +84,9 @@ form.addEventListener("submit", function (e) {
       username: username,
       roomname: roomname,
     });
+    input.style.height = "auto";
+    inputHeight = inputBar.offsetHeight;
+    chatContainer.style.height = chatBoxOrignalHeight + "px";
   }
 });
 
@@ -187,10 +233,12 @@ socket.on("left", function (username) {
 });
 
 socket.on("message", function (data) {
+  console.log(data.text);
   const isMe = data.username === username;
   const chatBox = document.createElement("div");
   const user = document.createElement("h6");
   const msg = document.createElement("p");
+  msg.classList = "message-body";
 
   user.textContent = data.username;
   msg.textContent = data.text;
