@@ -229,33 +229,6 @@ def changeRoom(data):
         print("❌ Redis List Failed:", e)
     emit('user_list', {"userList": userList, "onlineUsers":onlineUsers} ,to=rid)
 
-#User Disconnected
-@socketio.on('disconnect')
-def disconnect():
-    value = redis_client.get(f"sid:{request.sid}")
-    if value:
-        info = json.loads(value)
-        username = info["username"]
-        rid = info["rid"]
-        redis_client.srem(f"online_users:{rid}", username)
-
-        if redis_client.scard(f"online_users:{rid}")==0:
-            redis_client.delete(f"online_users:{rid}")
-
-        leave_room(rid)
-        emit('offline',username, to=rid, broadcast=True, include_self=False)
-    
-        userList = []
-        onlineUsers = []
-        try:
-            userList = list(redis_client.smembers(f"room_users:{rid}"))
-            onlineUsers = list(redis_client.smembers(f"online_users:{rid}"))
-        except Exception as e:
-            print("❌ Redis List Failed:", e)
-        emit('user_list', {"userList": userList, "onlineUsers":onlineUsers} ,to=rid)
-        emit('disconnect', to=request.sid)
-    
-
 #User Typing
 @socketio.on('typing')
 def typing(data):

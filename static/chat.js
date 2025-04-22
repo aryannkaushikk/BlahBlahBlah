@@ -5,7 +5,7 @@ if (!username || !roomname) {
 }
 
 const input = document.querySelector("#chat-input");
-const form = input.closest('form');
+const form = input.closest("form");
 const chatContainer = document.querySelector("#chat-box");
 const changeRoom = document.querySelector("#change_room");
 const leaveRoom = document.querySelector("#leave_room");
@@ -14,30 +14,33 @@ const typing = document.querySelector("#typing");
 const navBar = document.querySelector("nav");
 const inputBar = document.querySelector("#input-bar");
 title.textContent = roomname;
+
 let inputHeight = 0;
 let chatBoxOrignalHeight = 0;
+
 window.onload = () => {
   inputHeight = input.scrollHeight;
   const navHeight = navBar.offsetHeight;
   const inputBarHeight = inputBar.offsetHeight;
-  
-  const inputBarPadding = parseFloat(window.getComputedStyle(document.querySelector("#input-bar")).paddingTop);
+
+  const inputBarPadding = parseFloat(
+    window.getComputedStyle(document.querySelector("#input-bar")).paddingTop
+  );
   const totalHeight = window.innerHeight;
-  const remainingHeight = totalHeight - inputBarHeight - inputBarPadding*2;
+  const remainingHeight = totalHeight - inputBarHeight - inputBarPadding * 2;
 
   chatContainer.style.marginTop = navHeight + "px";
   chatContainer.style.height = remainingHeight + "px";
   chatBoxOrignalHeight = remainingHeight;
 
-  document.querySelector("#offcanvasWithBothOptionsLabel").textContent = username;
+  document.querySelector("#offcanvasWithBothOptionsLabel").textContent =
+    username;
   document.querySelector("form textarea").focus();
 };
-
 
 const socket = io();
 
 socket.emit("join", { username, roomname });
-
 
 input.addEventListener("input", function () {
   this.style.height = "auto";
@@ -49,7 +52,7 @@ input.addEventListener("input", function () {
   if (newHeight !== inputHeight) {
     const diff = newHeight - inputHeight;
     const currentHeight = parseFloat(chatContainer.style.height);
-    chatContainer.style.height = (currentHeight - diff) + "px";
+    chatContainer.style.height = currentHeight - diff + "px";
     inputHeight = newHeight;
   }
 
@@ -57,14 +60,12 @@ input.addEventListener("input", function () {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
-
 input.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();  // Prevent newline
+    e.preventDefault(); // Prevent newline
     form.requestSubmit(); // Submit form
   }
 });
-
 
 form.addEventListener("submit", function (e) {
   e.preventDefault();
@@ -90,22 +91,33 @@ form.addEventListener("submit", function (e) {
   }
 });
 
+let leaveOrChange = 0;
+
+window.addEventListener("beforeunload", function () {
+  if (leaveOrChange === 0) {
+    socket.emit("change_room", {
+      username: username,
+      roomname: roomname,
+    });
+  } else {
+    socket.emit("left", {
+      username: username,
+      roomname: roomname,
+    });
+    leaveOrChange = 0;
+  }
+  localStorage.removeItem("username");
+});
+
 leaveRoom.addEventListener("click", (e) => {
   e.preventDefault();
-  socket.emit("left", {
-    username: username,
-    roomname: roomname,
-  });
-  localStorage.removeItem("username");
+  leaveOrChange = 1;
   window.location.href = "/";
 });
 
 changeRoom.addEventListener("click", (e) => {
   e.preventDefault();
-  socket.emit("change_room", {
-    username: username,
-    roomname: roomname,
-  });
+  leaveOrChange = 0;
   window.location.href = "/";
 });
 
@@ -172,64 +184,34 @@ socket.on("user_list", function (data) {
   });
 });
 
-window.addEventListener("beforeunload", function () {
-  localStorage.removeItem("username");
-});
+function statusHandler(username, msg) {
+  const status = document.createElement("div");
+  status.textContent = username + " " + msg;
+  status.style.width = "max-content";
+  status.style.maxWidth = "75%";
+  status.style.borderRadius = "12px";
+  status.className = "d-block m-2 p-2 text-wrap text-break";
+  status.classList.add("mx-auto");
+  status.style.backgroundColor = "black";
+  status.style.color = "white";
+  chatContainer.appendChild(status);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
 socket.on("online", function (username) {
-  const joinAlert = document.createElement("div");
-  joinAlert.textContent = username + " is online";
-  joinAlert.style.width = "max-content";
-  joinAlert.style.maxWidth = "75%";
-  joinAlert.style.borderRadius = "12px";
-  joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
-  joinAlert.classList.add("mx-auto");
-  joinAlert.style.backgroundColor = "black";
-  joinAlert.style.color = "white";
-  chatContainer.appendChild(joinAlert);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  statusHandler(username, "is online");
 });
 
 socket.on("offline", function (username) {
-  const joinAlert = document.createElement("div");
-  joinAlert.textContent = username + " went offline";
-  joinAlert.style.width = "max-content";
-  joinAlert.style.maxWidth = "75%";
-  joinAlert.style.borderRadius = "12px";
-  joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
-  joinAlert.classList.add("mx-auto");
-  joinAlert.style.backgroundColor = "black";
-  joinAlert.style.color = "white";
-  chatContainer.appendChild(joinAlert);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  statusHandler(username, "went offline");
 });
 
 socket.on("join", function (username) {
-  const joinAlert = document.createElement("div");
-  joinAlert.textContent = username + " has joined the room";
-  joinAlert.style.width = "max-content";
-  joinAlert.style.maxWidth = "75%";
-  joinAlert.style.borderRadius = "12px";
-  joinAlert.className = "d-block m-2 p-2 text-wrap text-break";
-  joinAlert.classList.add("mx-auto");
-  joinAlert.style.backgroundColor = "black";
-  joinAlert.style.color = "white";
-  chatContainer.appendChild(joinAlert);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  statusHandler(username, "has joined the room");
 });
 
 socket.on("left", function (username) {
-  const leftAlert = document.createElement("div");
-  leftAlert.textContent = username + " has left the room";
-  leftAlert.style.width = "max-content";
-  leftAlert.style.maxWidth = "75%";
-  leftAlert.style.borderRadius = "12px";
-  leftAlert.className = "d-block m-2 p-2 text-wrap text-break";
-  leftAlert.classList.add("mx-auto");
-  leftAlert.style.backgroundColor = "black";
-  leftAlert.style.color = "white";
-  chatContainer.appendChild(leftAlert);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  statusHandler(username, "has left the room");
 });
 
 socket.on("message", function (data) {
