@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 from flask import Flask, json, redirect, render_template, request
 from flask_socketio import SocketIO, emit, leave_room, send, join_room
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import redis
+from sqlalchemy.orm import joinedload
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, decode_responses=True) #Redis Initialisation
 
@@ -58,13 +59,23 @@ class Messages(db.Model):
     rid = db.Column(db.String, db.ForeignKey('rooms.rid'), nullable = False)
     message = db.Column(db.String, nullable = False)
     timestamp = db.Column(db.DateTime, default = datetime.utcnow, nullable = False)
+    read_by_all = db.Column(db.Boolean, default=False)
 
     user = db.relationship('Users', backref='messages')
     room = db.relationship('Rooms', backref='messages')
+    read_receipts = db.relationship('ReadReceipt', backref='message', lazy='joined')
+
 
     def __repr__(self):
         return f"<Message {self.message} from user {self.uid} in room {self.rid}>"
     
+class ReadReceipt(db.Model):
+    rrid = db.Column(db.String, primary_key=True)
+    mid = db.Column(db.String, db.ForeignKey('messages.mid'))
+    uid = db.Column(db.String(100), db.ForeignKey('users.uid'))
+    rid = db.Column(db.String(100), db.ForeignKey('rooms.rid'))
+    read_at = db.Column(db.DateTime, nullable=True)
+
 #DB SECTION
 
 
@@ -87,14 +98,17 @@ def get_message(data):
     uid = Users.query.filter_by(username = data["username"]).first().uid
     rid = Rooms.query.filter_by(roomname = data["roomname"]).first().rid
     msg = data["text"]
-    
-    new_msg = Messages(mid = 'MID'+ str(Messages.query.count() + 1), uid = uid, rid = rid, timestamp = datetime.utcnow(), message = msg)
+    time = datetime.now(timezone.utc)
+    data['time'] = time.isoformat()
+    data['read_by'] = [data['username']]
+
+    new_msg = Messages(mid = 'MID'+ str(Messages.query.count() + 1), uid = uid, rid = rid, timestamp = time, message = msg)
     try:
         db.session.add(new_msg)
         db.session.commit()
     except Exception as e:
         print("❌ DB Write Failed:", e)
-
+    data['mid'] = new_msg.mid
     send(data, to=rid)
 
 
@@ -138,16 +152,26 @@ def join(data):
     join_room(room.rid)
     redis_client.sadd(f"online_users:{room.rid}", username)
 
-    messages = Messages.query.filter_by(rid = room.rid).order_by(Messages.timestamp).all()
-    msg_data = [{
-                    "username": Users.query.get(msg.uid).username,
-                    "text": msg.message,
-                    } for msg in messages]
+    messages = Messages.query.options(joinedload(Messages.read_receipts)).filter_by(rid=room.rid).order_by(Messages.timestamp).all()
 
-    emit('load_msg',msg_data, to=request.sid)
+    msg_data = []
+    for msg in messages:
+        read_usernames = [Users.query.get(receipt.uid).username for receipt in msg.read_receipts]
+        msg_data.append({
+            "username": Users.query.get(msg.uid).username,  # Get the username of the message sender
+            "text": msg.message,
+            "time": msg.timestamp.isoformat(),
+            "mid": msg.mid,
+            "read_by": read_usernames,
+            "readByAll": msg.read_by_all
+        })
+    
+    emit('load_msg', msg_data, to=request.sid)
+
     userTyping = list(redis_client.smembers(f"user_typing:{room.rid}"))
     emit('typing_list',userTyping,to=room.rid)
     redis_client.set(f"sid:{request.sid}", json.dumps({"username":username, "rid": room.rid}))
+    redis_client.set(f"uid:{user.uid}", request.sid)
 
     if(new):
         emit('join',username, to=room.rid, broadcast=True, include_self=False)
@@ -255,6 +279,40 @@ def stop_typing(data):
     
     userList = list(redis_client.smembers(f"user_typing:{rid}"))
     emit('typing_list',userList,to=rid)
+
+#Message Read By Some User
+@socketio.on('msgRead')
+def msgRead(data):
+    uid = Users.query.filter_by(username = data["username"]).first().uid
+    rid = Rooms.query.filter_by(roomname = data["roomname"]).first().rid
+    mid = data["mid"]
+
+    time = datetime.now(timezone.utc)
+    data['time'] = time.isoformat()
+    
+    try:
+        new_receipt = ReadReceipt(rrid=str(uid+mid), mid=mid, uid=uid, rid=rid, read_at=datetime.utcnow())
+        db.session.add(new_receipt)
+        db.session.commit()
+    except Exception as e:
+        print("❌ DB Write Failed:", e)
+
+    read_count = ReadReceipt.query.filter_by(mid=mid).count()
+    user_list = redis_client.smembers(f"room_users:{rid}")
+    user_count = len(user_list)
+
+    if read_count == user_count:
+        uid = Messages.query.get(mid).uid
+        sender_sid = redis_client.get(f"uid:{uid}")
+        emit('markAsRead', mid, to=sender_sid)
+
+#Message Read By All User
+@socketio.on('readByAll')
+def readByAll(data):
+    message = Messages.query.filter_by(mid=data['mid']).first()
+    if message: 
+        message.read_by_all = True
+        db.session.commit()
 
 #App Running
 if __name__ == '__main__':

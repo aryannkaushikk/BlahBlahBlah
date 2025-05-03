@@ -15,3 +15,7 @@ textarea{
   overflow-y: scroll;
   scrollbar-width: none;
 }
+
+.status-mark{
+  transition: opacity 0.5s ease-in-out;
+}

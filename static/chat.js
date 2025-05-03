@@ -16,7 +16,7 @@ const inputBar = document.querySelector("#input-bar");
 title.textContent = roomname;
 
 let inputHeight = 0;
-let chatBoxOrignalHeight = 0;
+let msgBoxOrignalHeight = 0;
 
 window.onload = () => {
   inputHeight = input.scrollHeight;
@@ -31,7 +31,7 @@ window.onload = () => {
 
   chatContainer.style.marginTop = navHeight + "px";
   chatContainer.style.height = remainingHeight + "px";
-  chatBoxOrignalHeight = remainingHeight;
+  msgBoxOrignalHeight = remainingHeight;
 
   document.querySelector("#offcanvasWithBothOptionsLabel").textContent =
     username;
@@ -71,8 +71,6 @@ form.addEventListener("submit", function (e) {
   e.preventDefault();
 
   const message = input.value;
-  console.log(message);
-  console.log(message.trim());
 
   if (message.trim() != "") {
     socket.emit("message", {
@@ -86,8 +84,8 @@ form.addEventListener("submit", function (e) {
       roomname: roomname,
     });
     input.style.height = "auto";
-    inputHeight = inputBar.offsetHeight;
-    chatContainer.style.height = chatBoxOrignalHeight + "px";
+    inputHeight = input.scrollHeight;
+    chatContainer.style.height = msgBoxOrignalHeight + "px";
   }
 });
 
@@ -214,64 +212,112 @@ socket.on("left", function (username) {
   statusHandler(username, "has left the room");
 });
 
-socket.on("message", function (data) {
-  console.log(data.text);
+const observer = new IntersectionObserver((entries, observer) => {
+  entries.forEach(entry => {
+      if (entry.isIntersecting && !entry.target.classList.contains('read')) {
+          console.log("I was triggered");
+          const messageId = entry.target.dataset.mid;
+          socket.emit('msgRead', {
+            "username": username,
+            "roomname": roomname,
+            "mid" : messageId
+          }); 
+          entry.target.classList.add('read');
+          observer.unobserve(entry.target);
+      }
+  });
+}, {
+  threshold: 0.5
+});
+
+function markAsRead(messageId){
+  socket.emit('readByAll',{
+    "mid" : messageId
+  });
+  const statusImg = document.querySelector(`[data-mid="${messageId}"]`).querySelector('div').querySelector('img');
+  statusImg.style.opacity = 0;
+  
+  setTimeout(() => {
+    statusImg.src = '../static/read.svg'; 
+    statusImg.style.opacity = 1;
+  }, 500); 
+}
+
+socket.on("markAsRead", function (data) {
+  markAsRead(data);
+});
+
+function msgMaker(data) {
   const isMe = data.username === username;
-  const chatBox = document.createElement("div");
+  const msgBox = document.createElement("div");
   const user = document.createElement("h6");
   const msg = document.createElement("p");
-  msg.classList = "message-body";
+  const status = document.createElement("div");
+  const time = document.createElement("span");
+
+  msgBox.dataset.mid = data.mid;
+  status.appendChild(time);
+
+  //Status Mark
+  if(isMe) {
+    const mark = document.createElement("img");
+  
+  if(data.readByAll)  mark.src = '../static/read.svg';
+  else mark.src = '../static/sent.svg';
+  mark.width = '16';
+  mark.height = '16';
+  mark.alt = 'sent';
+  mark.style.marginLeft = '1px';
+  mark.classList = 'status-mark';
+  status.appendChild(mark);
+  } 
+  status.className = "d-flex justify-content-end align-items-center";
+  status.style.fontSize = "75%";
+  status.style.color = "grey";
+
+  if (data.readByAll || data.read_by.includes(username)) {
+    msgBox.classList.add('read');
+  } else {
+    observer.observe(msgBox);
+  }
+
+  const dateTime = new Date(data.time);
+  const localDateTime = dateTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).toUpperCase();
 
   user.textContent = data.username;
   msg.textContent = data.text;
+  time.textContent = localDateTime;
 
-  chatBox.appendChild(user);
-  chatBox.appendChild(msg);
+  msgBox.appendChild(user);
+  msgBox.appendChild(msg);
+  msgBox.appendChild(status);
 
-  chatBox.style.width = "max-content";
-  chatBox.style.maxWidth = "75%";
-  chatBox.style.borderRadius = "12px";
-  chatBox.className = "d-block m-2 p-2 text-wrap text-break";
+  msgBox.style.width = "max-content";
+  msgBox.style.maxWidth = "75%";
+  msgBox.style.borderRadius = "12px";
+  msgBox.className = "position-relative d-block m-2 p-2 text-wrap text-break";
 
   if (isMe) {
-    chatBox.classList.add("ms-auto");
-    chatBox.style.backgroundColor = "lightgreen";
+    msgBox.classList.add("ms-auto");
+    msgBox.style.backgroundColor = "lightgreen";
   } else {
-    chatBox.style.backgroundColor = "darkgrey";
-    chatBox.style.color = "white";
+    msgBox.style.backgroundColor = "darkgrey";
+    msgBox.style.color = "white";
   }
-
-  chatContainer.appendChild(chatBox);
+  chatContainer.appendChild(msgBox);
   chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+socket.on("message", function (data) {
+  msgMaker(data);
 });
 
 socket.on("load_msg", function (data) {
   data.forEach((element) => {
-    const isMe = element.username === username;
-    const chatBox = document.createElement("div");
-    const user = document.createElement("h6");
-    const msg = document.createElement("p");
-
-    user.textContent = element.username;
-    msg.textContent = element.text;
-
-    chatBox.appendChild(user);
-    chatBox.appendChild(msg);
-
-    chatBox.style.width = "max-content";
-    chatBox.style.maxWidth = "75%";
-    chatBox.style.borderRadius = "12px";
-    chatBox.className = "d-block m-2 p-2 text-wrap text-break";
-
-    if (isMe) {
-      chatBox.classList.add("ms-auto");
-      chatBox.style.backgroundColor = "lightgreen";
-    } else {
-      chatBox.style.backgroundColor = "darkgrey";
-      chatBox.style.color = "white";
-    }
-
-    chatContainer.appendChild(chatBox);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    msgMaker(element);
   });
 });
