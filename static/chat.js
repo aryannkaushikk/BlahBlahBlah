@@ -215,7 +215,6 @@ socket.on("left", function (username) {
 const observer = new IntersectionObserver((entries, observer) => {
   entries.forEach(entry => {
       if (entry.isIntersecting && !entry.target.classList.contains('read')) {
-          console.log("I was triggered");
           const messageId = entry.target.dataset.mid;
           socket.emit('msgRead', {
             "username": username,
@@ -296,6 +295,7 @@ function msgMaker(data) {
   msgBox.appendChild(msg);
   msgBox.appendChild(status);
 
+  msgBox.style.height = "max-content";
   msgBox.style.width = "max-content";
   msgBox.style.maxWidth = "75%";
   msgBox.style.borderRadius = "12px";
