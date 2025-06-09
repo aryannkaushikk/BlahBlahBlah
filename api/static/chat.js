@@ -52,7 +52,7 @@ window.onload = () => {
   document.querySelector("form textarea").focus();
 };
 
-const socket = io("http://127.0.0.1:8080", {
+const socket = io("https://bbb-chat-service.onrender.com", {
   transports: ['websocket'],
   auth : {
     rid : rid,
