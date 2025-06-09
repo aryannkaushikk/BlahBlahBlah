@@ -33,7 +33,7 @@ def on_connect(auth):
     redis_client.sadd(f"online_users:{rid}", uid)
     redis_client.hset(f"user:{uid}", mapping={"username": username})
     online_users = list(redis_client.smembers(f"online_users:{rid}"))
-    total_users = requests.get('http://127.0.0.1:5800/getUsers', params={
+    total_users = requests.get('http://room_service:5800/getUsers', params={
         'rid': rid
     }).json().get("users")
 
@@ -57,7 +57,7 @@ def on_connect(auth):
     emit("user_list", {'status': status}, to=rid)
 
     try:
-        resp = requests.get("http://127.0.0.1:5600/load_message", params={"rid": rid})
+        resp = requests.get("http://message_service:5600/load_message", params={"rid": rid})
         resp.raise_for_status()
         messages = resp.json()
     except Exception as e:
@@ -67,7 +67,7 @@ def on_connect(auth):
     msg_data = []
     for msg in messages['res']:
         try:
-            read_resp = requests.get('http://127.0.0.1:5600/msgReadBy', params={'mid': msg['mid']})
+            read_resp = requests.get('http://message_service:5600/msgReadBy', params={'mid': msg['mid']})
             read_resp.raise_for_status()
             read_usernames = read_resp.json().get('users', [])
         except Exception as e:
@@ -110,7 +110,7 @@ def handle_change_room(data):
     try:
         online_users = list(redis_client.smembers(f"online_users:{rid}"))
         total_users = requests.get(
-            'http://127.0.0.1:5800/getUsers',
+            'http://room_service:5800/getUsers',
             params={'rid': rid}
         ).json().get("users", [])
 
@@ -160,7 +160,7 @@ def handle_leave_room(data):
     # Call room service to remove user-room association
     try:
         response = requests.put(
-            'http://127.0.0.1:5800/delUserroom',
+            'http://room_service:5800/delUserroom',
             json={'uid': uid, 'rid': rid}
         )
         if response.status_code != 200:
@@ -172,7 +172,7 @@ def handle_leave_room(data):
     try:
         online_users = list(redis_client.smembers(f"online_users:{rid}"))
         total_users = requests.get(
-            'http://127.0.0.1:5800/getUsers',
+            'http://room_service:5800/getUsers',
             params={'rid': rid}
         ).json().get("users", [])
 
@@ -210,7 +210,7 @@ def handle_message(data):
         return
 
     try:
-        response = requests.post("http://127.0.0.1:5600/save_message", json={
+        response = requests.post("http://message_service:5600/save_message", json={
             "uid": uid,
             "rid": rid,
             "message": msg,
@@ -223,7 +223,7 @@ def handle_message(data):
             data['time'] = res['time']
             data['readByAll'] = res['read_by_all']
 
-            read_by_res = requests.get('http://127.0.0.1:5600/msgReadBy', params={
+            read_by_res = requests.get('http://message_service:5600/msgReadBy', params={
                 "mid": data['mid']
             })
 
@@ -246,7 +246,7 @@ def msgRead(data):
     mid = data.get('mid')
     rid = data.get('rid')
 
-    response = requests.post('http://127.0.0.1:5600/msgRead', json={
+    response = requests.post('http://message_service:5600/msgRead', json={
         'uid': uid,
         'rid': rid,
         'mid': mid
@@ -293,4 +293,4 @@ def typing(data):
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=8080, host='0.0.0.0')
+    socketio.run(app, port=8080, host='0.0.0.0')

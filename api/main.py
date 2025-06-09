@@ -26,7 +26,7 @@ def joinRoom():
     uid = g.uid
 
     try:
-        response = requests.post("http://127.0.0.1:5800/join_room", json={
+        response = requests.post("http://room_service:5800/join_room", json={
             "uid": uid,
             "rid": rid
         })
@@ -51,7 +51,7 @@ def createRoom():
     uid = g.uid
 
     try:
-        response = requests.post("http://127.0.0.1:5800/create_room", json={
+        response = requests.post("http://room_Service:5800/create_room", json={
             "uid": uid,
             "roomname": roomname
         })
@@ -73,4 +73,4 @@ def createRoom():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5100)
+    app.run(port=5100)

@@ -146,4 +146,4 @@ def del_user_room():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5800)
+    app.run(port=5800)

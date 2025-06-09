@@ -14,34 +14,6 @@ supabase: Client = create_client(url, key)
 # Initialize Flask app
 app = Flask(__name__)
 
-
-# # Define Models
-# class Messages(db.Model):
-#     __tablename__ = "messages"
-
-#     mid = db.Column(db.String, primary_key=True)
-#     uid = db.Column(db.String, nullable=False)
-#     rid = db.Column(db.String, nullable=False)
-#     message = db.Column(db.String, nullable=False)
-#     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-#     read_by_all = db.Column(db.Boolean, default=False)
-
-#     read_receipts = db.relationship('ReadReceipt', backref='message', lazy='joined')
-
-#     def __repr__(self):
-#         return f"<Message {self.message} from {self.uid} in room {self.rid}>"
-
-
-# class ReadReceipt(db.Model):
-#     __tablename__ = "read_receipts"
-
-#     rrid = db.Column(db.String, primary_key=True)
-#     mid = db.Column(db.String, db.ForeignKey('messages.mid'))
-#     uid = db.Column(db.String(100))
-#     rid = db.Column(db.String(100))
-#     read_at = db.Column(db.DateTime, nullable=True)
-
-
 # Route to save message
 @app.route('/save_message', methods=['POST'])
 def save_message():
@@ -162,4 +134,4 @@ def msgReadBy():
 
 # Run the app
 if __name__ == '__main__':
-    app.run(debug=True, port=5600)
+    app.run(port=5600)
