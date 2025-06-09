@@ -24,9 +24,6 @@ COPY ./room_service /app/room_service
 # Copy the shared folder (for shared modules)
 COPY ./shared /app/shared
 
-#Copy Firebase SDK JSON from root
-COPY ../firebase-sdk.json /app/room_service/firebase-sdk.json
-
 # Expose port your app runs on
 EXPOSE 5800
 

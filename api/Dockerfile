@@ -24,9 +24,6 @@ COPY ./api /app/api
 # Copy the shared folder (for shared modules)
 COPY ./shared /app/shared
 
-#Copy Firebase SDK JSON from root
-COPY ../firebase-sdk.json /app/api/firebase-sdk.json
-
 # Expose port your app runs on
 EXPOSE 5100
 

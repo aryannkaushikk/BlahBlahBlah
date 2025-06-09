@@ -3,3 +3,4 @@ requests==2.32.3
 flask-cors==6.0.0
 firebase_admin==6.8.0
 gunicorn==23.0.0
+python-dotenv==1.1.0

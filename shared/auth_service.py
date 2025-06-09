@@ -1,9 +1,11 @@
 from functools import wraps
+from dotenv import load_dotenv
 from flask import request, jsonify, g
 import firebase_admin
 from firebase_admin import credentials, auth
 import os
 
+load_dotenv()
 # Initialize Firebase with the dict
 firebase_cred_dict = {
     "type": os.getenv("FIREBASE_TYPE"),
