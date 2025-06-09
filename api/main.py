@@ -26,7 +26,7 @@ def joinRoom():
     uid = g.uid
 
     try:
-        response = requests.post("http://room_service:5800/join_room", json={
+        response = requests.post("https://bbb-room-service.onrender.com/join_room", json={
             "uid": uid,
             "rid": rid
         })
@@ -51,7 +51,7 @@ def createRoom():
     uid = g.uid
 
     try:
-        response = requests.post("http://room_Service:5800/create_room", json={
+        response = requests.post("https://bbb-room-service.onrender.com/create_room", json={
             "uid": uid,
             "roomname": roomname
         })

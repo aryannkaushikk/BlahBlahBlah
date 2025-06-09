@@ -33,7 +33,7 @@ def on_connect(auth):
     redis_client.sadd(f"online_users:{rid}", uid)
     redis_client.hset(f"user:{uid}", mapping={"username": username})
     online_users = list(redis_client.smembers(f"online_users:{rid}"))
-    total_users = requests.get('http://room_service:5800/getUsers', params={
+    total_users = requests.get('https://bbb-room-service.onrender.com/getUsers', params={
         'rid': rid
     }).json().get("users")
 
@@ -57,7 +57,7 @@ def on_connect(auth):
     emit("user_list", {'status': status}, to=rid)
 
     try:
-        resp = requests.get("http://message_service:5600/load_message", params={"rid": rid})
+        resp = requests.get("https://bbb-message-service.onrender.com/load_message", params={"rid": rid})
         resp.raise_for_status()
         messages = resp.json()
     except Exception as e:
@@ -67,7 +67,7 @@ def on_connect(auth):
     msg_data = []
     for msg in messages['res']:
         try:
-            read_resp = requests.get('http://message_service:5600/msgReadBy', params={'mid': msg['mid']})
+            read_resp = requests.get('https://bbb-message-service.onrender.com/msgReadBy', params={'mid': msg['mid']})
             read_resp.raise_for_status()
             read_usernames = read_resp.json().get('users', [])
         except Exception as e:
@@ -110,7 +110,7 @@ def handle_change_room(data):
     try:
         online_users = list(redis_client.smembers(f"online_users:{rid}"))
         total_users = requests.get(
-            'http://room_service:5800/getUsers',
+            'https://bbb-room-service.onrender.com/getUsers',
             params={'rid': rid}
         ).json().get("users", [])
 
@@ -160,7 +160,7 @@ def handle_leave_room(data):
     # Call room service to remove user-room association
     try:
         response = requests.put(
-            'http://room_service:5800/delUserroom',
+            'https://bbb-room-service.onrender.com/delUserroom',
             json={'uid': uid, 'rid': rid}
         )
         if response.status_code != 200:
@@ -172,7 +172,7 @@ def handle_leave_room(data):
     try:
         online_users = list(redis_client.smembers(f"online_users:{rid}"))
         total_users = requests.get(
-            'http://room_service:5800/getUsers',
+            'https://bbb-room-service.onrender.com/getUsers',
             params={'rid': rid}
         ).json().get("users", [])
 
@@ -210,7 +210,7 @@ def handle_message(data):
         return
 
     try:
-        response = requests.post("http://message_service:5600/save_message", json={
+        response = requests.post("https://bbb-message-service.onrender.com/save_message", json={
             "uid": uid,
             "rid": rid,
             "message": msg,
@@ -223,7 +223,7 @@ def handle_message(data):
             data['time'] = res['time']
             data['readByAll'] = res['read_by_all']
 
-            read_by_res = requests.get('http://message_service:5600/msgReadBy', params={
+            read_by_res = requests.get('https://bbb-message-service.onrender.com/msgReadBy', params={
                 "mid": data['mid']
             })
 
@@ -246,7 +246,7 @@ def msgRead(data):
     mid = data.get('mid')
     rid = data.get('rid')
 
-    response = requests.post('http://message_service:5600/msgRead', json={
+    response = requests.post('https://bbb-message-service.onrender.com/msgRead', json={
         'uid': uid,
         'rid': rid,
         'mid': mid
