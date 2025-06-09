@@ -22,7 +22,7 @@ RUN pip install -r /app/api/requirements.txt
 COPY ./api /app/api
 
 # Copy the shared folder (for shared modules)
-COPY ./shared /app/shared
+COPY ../shared /app/shared
 
 # Expose port your app runs on
 EXPOSE 5100
