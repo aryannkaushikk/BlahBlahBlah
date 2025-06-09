@@ -243,7 +243,7 @@ function markAsRead(messageId) {
   setTimeout(() => {
     statusImg.src = '../static/read.svg';
     statusImg.style.opacity = 1;
-  }, 500);
+  }, 300);
 }
 
 

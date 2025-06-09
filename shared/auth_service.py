@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import redirect, request, jsonify, g
+from flask import request, jsonify, g
 import firebase_admin
 from firebase_admin import credentials, auth
 

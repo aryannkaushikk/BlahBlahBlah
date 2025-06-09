@@ -1,14 +1,16 @@
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
-from datetime import datetime, timezone
 import os
-
+from dotenv import load_dotenv
 import redis
 import requests
-from auth_service import verify_token
+
 
 # Setup Flask and SocketIO
-redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, decode_responses=True)
+load_dotenv()
+redis_url = os.getenv('REDIS_URL')
+redis_client = redis.from_url(redis_url, decode_responses = True)
+
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -252,10 +254,9 @@ def msgRead(data):
 
     if(response['message']!='Already read'):
         readByAll = response['readByAll']
-        read_by_users = response['read_by_users']
 
         if(readByAll):
-            emit('readByAll', {"mid": mid}, to=request.sid)
+            emit('readByAll', {"mid": mid}, to=rid)
 
 
 @socketio.on('typing')

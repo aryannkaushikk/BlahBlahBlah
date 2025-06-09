@@ -1,6 +1,6 @@
-from flask import Flask, json, jsonify, redirect, render_template, request, g
+from flask import Flask, jsonify, render_template, request, g
 import requests
-from auth_service import verify_token
+from shared.auth_service import verify_token
 from flask_cors import CORS
 
 app = Flask(__name__)
