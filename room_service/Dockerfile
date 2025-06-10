@@ -21,9 +21,6 @@ RUN pip install -r /app/room_service/requirements.txt
 # Copy the API source code
 COPY ./room_service /app/room_service
 
-# Copy the shared folder (for shared modules)
-COPY ../shared /app/shared
-
 # Expose port your app runs on
 EXPOSE 5800
 

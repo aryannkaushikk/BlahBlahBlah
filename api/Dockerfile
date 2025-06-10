@@ -21,8 +21,7 @@ RUN pip install -r /app/api/requirements.txt
 # Copy the API source code
 COPY ./api /app/api
 
-# Copy the shared folder (for shared modules)
-COPY ../shared /app/shared
+COPY ../firebase-sdk.json /app
 
 # Expose port your app runs on
 EXPOSE 5100

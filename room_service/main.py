@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from supabase import create_client, Client
-from shared.auth_service import verify_token
 from flask_cors import CORS
 
 load_dotenv()

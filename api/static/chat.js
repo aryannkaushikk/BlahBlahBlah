@@ -49,10 +49,12 @@ window.onload = () => {
 
   document.querySelector("#offcanvasWithBothOptionsLabel").textContent =
     username;
+  document.querySelector("#roomid").textContent =
+    'Room ID: '+ rid;
   document.querySelector("form textarea").focus();
 };
 
-const socket = io("https://bbb-chat-service.onrender.com", {
+const socket = io("ws://localhost:8080", {
   transports: ['websocket'],
   auth : {
     rid : rid,
@@ -155,13 +157,20 @@ changeRoom.addEventListener("click", (e) => {
 signOutRoom.addEventListener("click", (e) => {
   signOut(auth)
     .then(() => {
-      localStorage.clear();
-      window.location.href = "/";
+      fetch("/logout", {
+        method: "POST",
+        credentials: "include"  // Send cookie
+      }).then(() => {
+        socket.emit('logout');  // Optional: notify others
+        localStorage.clear();
+        window.location.href = "/";
+      });
     })
     .catch((error) => {
       alert("Error signing out: " + error.message);
     });
 });
+
 
 let typingTimeout;
 
@@ -243,7 +252,7 @@ function markAsRead(messageId) {
   setTimeout(() => {
     statusImg.src = '../static/read.svg';
     statusImg.style.opacity = 1;
-  }, 300);
+  }, 100);
 }
 
 

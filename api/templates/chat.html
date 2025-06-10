@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script>
-      const uid = localStorage.getItem('uid');
-      
-      if(!uid){
-        window.location.href = '/room'; 
-      }
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
@@ -46,6 +39,8 @@
         <button class="btn btn-outline-warning my-2" id="change_room">
           Change Room
         </button>
+        <br>
+        <h6 id="roomid" style="font-weight: lighter;">Room ID: </h6>
       </div>
     </div>
 
