@@ -181,7 +181,7 @@
           const data = await response.json();
           localStorage.setItem("rid", data.rid);
           localStorage.setItem("roomname", data.roomname);
-          localStorage.setItem("username", user.uid);
+          localStorage.setItem("uid", user.uid);
           localStorage.setItem("username", user.displayName);
           alertCreate("Created Room Successfully", "green");
 
