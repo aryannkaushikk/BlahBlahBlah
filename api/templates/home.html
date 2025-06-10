@@ -153,7 +153,7 @@
         signInWithPopup(auth, provider)
           .then((result) => result.user.getIdToken())
           .then((idToken) => {
-            return fetch("http://localhost:5100/sessionLogin", {
+            return fetch("https://blahblahblah.onrender.com/sessionLogin", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -204,7 +204,7 @@
       }).then(() => userCred.user.getIdToken());
     })
     .then((idToken) => {
-      return fetch("http://localhost:5100/sessionLogin", {
+      return fetch("https://blahblahblah.onrender.com/sessionLogin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -243,7 +243,7 @@
         signInWithEmailAndPassword(auth, email, password)
           .then((userCred) => userCred.user.getIdToken())
           .then((idToken) => {
-            return fetch("http://localhost:5100/sessionLogin", {
+            return fetch("https://blahblahblah.onrender.com/sessionLogin", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

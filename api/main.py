@@ -25,7 +25,7 @@ firebase_admin.initialize_app(cred)
 # Flask App Setup
 # ------------------------------------------
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["http://localhost:5100"])
+CORS(app, supports_credentials=True, origins=["https://blahblahblah.onrender.com"])
 
 # ------------------------------------------
 # Auth Decorator
@@ -75,7 +75,7 @@ def session_login():
             "session", session_cookie,
             max_age=expires_in.total_seconds(),
             httponly=True,
-            secure=False,  # Change to True if using HTTPS
+            secure=True,  # Change to True if using HTTPS
             samesite="Lax"
         )
         return response

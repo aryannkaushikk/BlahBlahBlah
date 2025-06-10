@@ -116,7 +116,7 @@
           const token = await user.getIdToken();
 
           const response = await fetch(
-            "http://localhost:5100/join_room",
+            "https://blahblahblah.onrender.com/join_room",
             {
               method: "POST",
               headers: {
@@ -161,7 +161,7 @@
           console.log("ID Token:", token);
 
           const response = await fetch(
-            "http://localhost:5100/create_room",
+            "https://blahblahblah.onrender.com/create_room",
             {
               method: "POST",
               headers: {
