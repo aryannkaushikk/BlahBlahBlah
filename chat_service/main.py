@@ -27,7 +27,7 @@ def ping():
         redis_client.set("Health", "1", ex=60)
         return jsonify({"Status": "Chat Service and Redis Alive"}), 200
     except redis.RedisError as e:
-        return jsonify({"Error": "SRedis Issue"}), 500
+        return jsonify({"Error": "Redis Issue"}), 500
 
 @socketio.on('connect')
 def on_connect(auth):

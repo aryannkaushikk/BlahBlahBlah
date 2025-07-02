@@ -17,17 +17,7 @@ app = Flask(__name__)
 #Keep Warm Route
 @app.route('/healthz')
 def ping():
-
-    response = (
-            supabase.table("logs")
-            .select("*")
-            .execute()
-    )
-
-    if not response or len(response.data) == 0:
-        return jsonify({"Error": "Supabase Issue"}), 500 
-    
-    return jsonify({"Status": "Message Service and Supabase Alive"}), 200
+    return jsonify({"Status": "Message Service Alive"}), 200
 
 # Route to save message
 @app.route('/save_message', methods=['POST'])
