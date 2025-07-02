@@ -151,6 +151,12 @@ def createRoom():
             "details": str(e)
         }), 500
 
+#Keep Warm Route
+@app.route('/healthz')
+def ping():
+    return jsonify({"Status": "API Service Alive"}), 200
+
+
 # ------------------------------------------
 # Main
 # ------------------------------------------

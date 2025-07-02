@@ -13,6 +13,11 @@ supabase: Client = create_client(url, key)
 app = Flask(__name__)
 CORS(app)
 
+#Keep Warm Route
+@app.route('/healthz')
+def ping():
+    return jsonify({"Status": "Room Service Alive"}), 200
+
 @app.route('/create_room', methods=['POST'])
 def create_room():
     data = request.get_json()

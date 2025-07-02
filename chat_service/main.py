@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
 import os
 from dotenv import load_dotenv
@@ -18,6 +18,16 @@ redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 # Setup Flask and SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+#Keep Warm Route
+@app.route('/healthz')
+def ping():
+
+    try:
+        redis_client.set("Health", "1", ex=60)
+        return jsonify({"Status": "Chat Service and Redis Alive"}), 200
+    except redis.RedisError as e:
+        return jsonify({"Error": "SRedis Issue"}), 500
 
 @socketio.on('connect')
 def on_connect(auth):
