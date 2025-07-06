@@ -21,7 +21,10 @@ export default function ChatHeader({
                 ?.username || "Direct Message"
             : roomName}
         </h2>
-        {typingUsers.length > 0 && (
+        {isDM ? 
+        (
+          <div className="text-sm text-slate-400 pl-3">typing…</div>
+        ) : typingUsers.length > 0 && (
           <div className="text-sm text-slate-400 pl-3">typing…</div>
         )}
       </div>
