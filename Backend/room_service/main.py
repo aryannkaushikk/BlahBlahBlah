@@ -21,7 +21,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # Flask App Setup
 # ------------------------------------------
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["https://blah-blah-blah-two.vercel.app"])
+CORS(app, origins=["https://blah-blah-blah-two.vercel.app"])
 
 # ------------------------------------------
 # JWT Auth Middleware
