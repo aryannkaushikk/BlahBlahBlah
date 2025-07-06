@@ -15,15 +15,23 @@ export default function ChatHeader({
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700 relative">
       <div>
-        <h2 className="text-lg font-semibold text-slate-100 truncate pl-3">
-          {roomName}
-        </h2>
-        {typingUsers.length > 0 && (
-          <div className="text-sm text-slate-400 pl-3">
-            {typingUsers.map((u) => u.username).join(", ")} typing…
-          </div>
-        )}
-      </div>
+  {/* Header title */}
+  <h2 className="text-lg font-semibold text-slate-100 truncate pl-3">
+    {isDM
+      ? // Show the other user's name in a DM
+        members.find((m) => !typingUsers.some((u) => u.uid === m.uid))?.username || "Direct Message"
+      : // Show the room name in group chat
+        roomName}
+  </h2>
+
+  {/* Typing indicator */}
+  {typingUsers.length > 0 && (
+    <div className="text-sm text-slate-400 pl-3">
+      {isDM ? "typing…" : `${typingUsers.map((u) => u.username).join(", ")} typing…`}
+    </div>
+  )}
+</div>
+
 
       {!isDM && (
         <div className="relative">
