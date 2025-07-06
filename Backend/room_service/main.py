@@ -109,6 +109,53 @@ def join_room():
     except Exception as e:
         print("❌ Join failed:", str(e))
         return jsonify({'error': 'Join failed', 'details': str(e)}), 500
+    
+
+# ------------------------------------------
+# Create or Fetch DM Room
+# ------------------------------------------
+@app.route('/create_or_fetch_dm', methods=['POST'])
+@verify_token
+def create_or_fetch_dm():
+    data = request.get_json()
+    uid1 = g.user["sub"]
+    uid2 = data.get("target_uid")
+
+    if not uid2:
+        print("❌ Missing target_uid in create_or_fetch_dm")
+        return jsonify({'error': 'Missing target_uid'}), 400
+
+    dm_key = "_".join(sorted([uid1, uid2]))
+
+    try:
+        # Check if DM room already exists
+        existing = supabase.table("rooms").select("rid").eq("dm_key", dm_key).execute()
+        if existing.data:
+            rid = existing.data[0]['rid']
+            print(f"ℹ️ Existing DM found for {uid1} and {uid2}, rid: {rid}")
+        else:
+            # Create new DM room
+            res = supabase.table("rooms").insert({
+                "name": "DM",
+                "type": "dm",
+                "dm_key": dm_key
+            }).execute()
+            rid = res.data[0]['rid']
+
+            # Add both users to the room
+            supabase.table("userroom").insert([
+                {"uid": uid1, "rid": rid},
+                {"uid": uid2, "rid": rid}
+            ]).execute()
+
+            print(f"✅ New DM room created for {uid1} and {uid2}, rid: {rid}")
+
+        return jsonify({"rid": rid}), 200
+
+    except Exception as e:
+        print("❌ Failed to create or fetch DM:", str(e))
+        return jsonify({'error': 'DM creation failed', 'details': str(e)}), 500
+
 
 # ------------------------------------------
 # Get Rooms for User
@@ -126,7 +173,8 @@ def get_rooms():
             print("ℹ️ No rooms found for user")
             return jsonify({'rooms': []}), 200
 
-        rooms = supabase.table("rooms").select("rid, name").in_("rid", rids).execute()
+        # Include type and DM participants for frontend filtering
+        rooms = supabase.table("rooms").select("rid, name, type, user1, user2").in_("rid", rids).execute()
         print(f"📤 Rooms returned: {rooms.data}")
         return jsonify({'rooms': rooms.data}), 200
     except Exception as e:
@@ -178,6 +226,89 @@ def leave_room():
     except Exception as e:
         print("❌ Failed to leave room:", str(e))
         return jsonify({"error": "Failed to leave room", "details": str(e)}), 500
+    
+# ------------------------------------------
+# Get All Users (for DM suggestions)
+# ------------------------------------------
+@app.route('/getAllUsers', methods=['GET'])
+@verify_token
+def get_all_users():
+    current_uid = g.user["sub"]
+
+    try:
+        print(f"📥 Fetching all users except: {current_uid}")
+        
+        res = supabase.table("users").select("id, username").neq("id", current_uid).execute()
+        users = res.data
+
+        print(f"📤 Users returned: {len(users)}")
+        return jsonify({"users": users}), 200
+    except Exception as e:
+        print("❌ Failed to fetch all users:", str(e))
+        return jsonify({'error': 'Failed to fetch users', 'details': str(e)}), 500
+    
+# ------------------------------------------
+# Start or Fetch DM Room
+# ------------------------------------------
+@app.route('/start_dm', methods=['POST'])
+@verify_token
+def start_dm():
+    data = request.get_json()
+    uid1 = g.user["sub"]
+    uid2 = data.get("target_uid")
+
+    if not uid2:
+        return jsonify({"error": "Missing target_uid"}), 400
+
+    # Generate consistent dm_key
+    sorted_ids = sorted([uid1, uid2])
+    dm_key = f"{sorted_ids[0]}_{sorted_ids[1]}"
+
+    try:
+        # Check if DM room already exists
+        existing = supabase.table("rooms").select("rid, name").eq("dm_key", dm_key).maybe_single().execute()
+        if existing.data:
+            rid = existing.data["rid"]
+            roomname = existing.data["name"]
+
+            # Add current user to userroom if not already in it
+            userroom_check = supabase.table("userroom").select("uid").eq("uid", uid1).eq("rid", rid).execute()
+            already_joined = any(entry["uid"] == uid1 for entry in userroom_check.data or [])
+
+            if not already_joined:
+                supabase.table("userroom").insert({"uid": uid1, "rid": rid}).execute()
+
+            print(f"ℹ️ Existing DM found with rid: {rid}")
+            return jsonify({"message": "DM exists", "rid": rid, "roomname": roomname}), 200
+
+    except Exception as e:
+        print(f"⚠️ Error checking existing DM: {e}")
+
+    # Create new DM
+    try:
+        create_room = supabase.table("rooms").insert({
+    "name": "DM",
+    "type": "dm",
+    "dm_key": dm_key,
+    "user1": uid1,
+    "user2": uid2
+}).execute()
+
+
+        rid = create_room.data[0]["rid"]
+
+        supabase.table("userroom").insert([
+            {"uid": uid1, "rid": rid},
+            {"uid": uid2, "rid": rid}
+        ]).execute()
+
+        print(f"✅ Created new DM room with rid: {rid}")
+        return jsonify({"message": "DM created", "rid": rid, "roomname": "DM"}), 200
+
+    except Exception as e:
+        print("❌ Failed to create DM:", str(e))
+        return jsonify({'error': 'Failed to start DM', 'details': str(e)}), 500
+
 
 # ------------------------------------------
 # Run App

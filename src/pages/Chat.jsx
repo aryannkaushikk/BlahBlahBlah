@@ -6,7 +6,7 @@ import MessageInput from "../components/MessageInput";
 import { useAuth } from "../context/AuthContext";
 import useRooms from "../hooks/useRooms";
 import { io } from "socket.io-client";
-import { CHAT_SERVICE_URL } from "../config";
+import { CHAT_SERVICE_URL, ROOM_SERVICE_URL } from "../config";
 import { supabase } from "../supabaseClient";
 
 export default function Chat({ setShowLogoutDialog }) {
@@ -21,11 +21,12 @@ export default function Chat({ setShowLogoutDialog }) {
   const [typingUsers, setTypingUsers] = useState([]);
   const [roomMembers, setRoomMembers] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [dmNameMap, setDmNameMap] = useState({});
 
   const socketRef = useRef(null);
   const messageEndRef = useRef(null);
   const inputRef = useRef(null);
-
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
 
@@ -45,10 +46,24 @@ export default function Chat({ setShowLogoutDialog }) {
     inputRef.current?.focus();
   }, [activeRoomId]);
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, username")
+        .neq("id", uid);
+
+      if (data) setUsers(data);
+      else console.error("Failed to fetch users", error);
+    };
+
+    if (uid) fetchUsers();
+  }, [uid]);
+
   const joinRoom = (rid) => {
     if (!token || !rid || !uid || !username) return;
 
-    if (socketRef.current && socketRef.current.connected) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit("leaveRoom", { uid, rid: activeRoomId, username });
       socketRef.current.disconnect();
     }
@@ -90,22 +105,10 @@ export default function Chat({ setShowLogoutDialog }) {
     });
 
     socket.on("user_list", ({ status }) => {
-      console.log(status);
       const [members] = status;
       setRoomMembers(members || []);
     });
   };
-
-  useEffect(() => {
-    return () => {
-      const socket = socketRef.current;
-      if (socket && socket.connected && activeRoomId) {
-        socket.emit("leaveRoom", { uid, rid: activeRoomId, username });
-        socket.disconnect();
-      }
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    };
-  }, [activeRoomId, uid, username]);
 
   const handleSend = (text) => {
     if (!text || !socketRef.current || !activeRoomId) return;
@@ -129,7 +132,6 @@ export default function Chat({ setShowLogoutDialog }) {
         socket.emit("typing", { uid, username, rid: activeRoomId });
         isTypingRef.current = true;
       }
-
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
         socket.emit("stop_typing", { uid, rid: activeRoomId });
@@ -144,7 +146,44 @@ export default function Chat({ setShowLogoutDialog }) {
     }
   };
 
+  const handleStartDM = async (target_uid) => {
+    if (!token || !uid || !target_uid) return;
+
+    const res = await fetch(`${ROOM_SERVICE_URL}/start_dm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ target_uid }),
+    });
+
+    if (!res.ok) {
+      console.error("DM start failed");
+      return;
+    }
+
+    const { rid, roomname } = await res.json();
+
+    // Add to rooms if not present
+    if (!rooms.find((r) => r.rid === rid)) {
+      setRooms((prev) => [...prev, { rid, name: roomname, type: "dm" }]);
+    }
+
+    // Save the display name
+    const otherUser = users.find((u) => u.id === target_uid);
+    if (otherUser) {
+      setDmNameMap((prev) => ({ ...prev, [rid]: otherUser.username }));
+    }
+
+    joinRoom(rid);
+  };
+
   const activeRoom = rooms.find((r) => r.rid === activeRoomId);
+  const isDM = activeRoom?.type === "dm";
+  const displayRoomName = isDM
+    ? dmNameMap[activeRoomId] || "Direct Message"
+    : activeRoom?.name || "Select a Room";
 
   return (
     <div className="flex h-screen bg-[#0e1117] text-slate-100">
@@ -157,42 +196,46 @@ export default function Chat({ setShowLogoutDialog }) {
         onSelectRoom={joinRoom}
         setShowLogoutDialog={setShowLogoutDialog}
         socketRef={socketRef}
+        uid={uid}
+        users={users}
+        onStartDM={handleStartDM}
+        dmNameMap={dmNameMap}
       />
 
       <div className="flex flex-col w-full h-screen bg-[#161b22]">
         <ChatHeader
-          roomName={activeRoom?.name || "Select a Room"}
+          roomName={displayRoomName}
           roomId={activeRoomId}
           typingUsers={typingUsers}
           members={roomMembers}
+          isDM={isDM}
         />
 
         <div className="flex-1 overflow-y-auto p-4">
           {loadingMessages ? (
-  <div className="flex flex-col gap-3 w-full">
-    {[...Array(6)].map((_, i) => (
-      <div
-        key={i}
-        className={`h-[40px] rounded-lg animate-pulse ${
-          i % 2 === 0
-            ? "self-start bg-slate-700 w-[30%]"
-            : "self-end bg-blue-600 w-[30%]"
-        }`}
-      ></div>
-    ))}
-  </div>
-) : (
-  <>
-    <MessageList
-      messages={messages}
-      currentUserId={uid}
-      socket={socketRef.current}
-      roomId={activeRoomId}
-    />
-    <div ref={messageEndRef} />
-  </>
-)}
-
+            <div className="flex flex-col gap-3 w-full">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-[40px] rounded-lg animate-pulse ${
+                    i % 2 === 0
+                      ? "self-start bg-slate-700 w-[30%]"
+                      : "self-end bg-blue-600 w-[30%]"
+                  }`}
+                />
+              ))}
+            </div>
+          ) : (
+            <>
+              <MessageList
+                messages={messages}
+                currentUserId={uid}
+                socket={socketRef.current}
+                roomId={activeRoomId}
+              />
+              <div ref={messageEndRef} />
+            </>
+          )}
         </div>
 
         <div className="bg-slate-800 p-4 border-t border-slate-700">

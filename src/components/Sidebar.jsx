@@ -4,6 +4,7 @@ import {
   ChevronRight,
   MessageSquareText,
   Plus,
+  User2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,10 @@ export default function Sidebar({
   setRooms,
   token,
   username,
+  users = [],
+  onStartDM,
+  dmNameMap = {},
+  uid,
 }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -71,7 +76,11 @@ export default function Sidebar({
       if (!res.ok) throw new Error("Failed to join room");
       const data = await res.json();
 
-      const room = { rid: joinRoomId, name: data?.roomname || `Room ${joinRoomId.slice(0, 4)}...` };
+      const room = {
+        rid: joinRoomId,
+        name: data?.roomname || `Room ${joinRoomId.slice(0, 4)}...`,
+      };
+
       setRooms((prev) => [...prev, room]);
       onSelectRoom(joinRoomId);
       setShowJoinRoomDialog(false);
@@ -90,7 +99,7 @@ export default function Sidebar({
           sidebarVisible ? "w-64" : "w-20"
         } bg-[#0e1117] text-slate-100 flex flex-col px-2 py-6 shadow-md transition-all duration-300 z-40`}
       >
-        {/* Toggle Sidebar */}
+        {/* Toggle */}
         <button
           onClick={() => setSidebarVisible(!sidebarVisible)}
           className="absolute top-4 right-[-1.25rem] bg-slate-800 text-slate-300 hover:text-blue-400 rounded-full p-1 shadow-md z-50"
@@ -100,7 +109,7 @@ export default function Sidebar({
         </button>
 
         {/* Logo */}
-        <div className="mb-8 flex justify-center">
+        <div className="mb-6 flex justify-center">
           <img
             src="/barLogo.png"
             alt="Logo"
@@ -110,23 +119,71 @@ export default function Sidebar({
           />
         </div>
 
-        {/* Room List */}
+        {/* DMs Section */}
+{sidebarVisible && (
+  <h3 className="text-slate-400 text-sm font-semibold px-2 mb-1">Direct Messages</h3>
+)}
+<div className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-60">
+  {users.map((user) => {
+  const dmRoom = rooms.find((room) =>
+    room.type === "dm" &&
+    ((room.user1 === uid && room.user2 === user.id) ||
+     (room.user2 === uid && room.user1 === user.id))
+  );
+
+  const isActive = dmRoom?.rid === activeRoomId;
+
+  return (
+    <button
+      key={user.id}
+      onClick={() => onStartDM(user.id)}
+      className={`${baseStyle} ${
+        isActive ? activeStyle : "hover:bg-slate-700 text-slate-300"
+      } ${sidebarVisible ? "justify-start px-4" : "justify-center px-2"}`}
+      title={!sidebarVisible ? user.username : ""}
+    >
+      <User2 className="w-5 h-5" />
+      {sidebarVisible && (
+        <span className="truncate">{user.username}</span>
+      )}
+    </button>
+  );
+})}
+
+
+</div>
+
+
+        {/* Rooms Section */}
+        {sidebarVisible && (
+          <h3 className="text-slate-400 text-sm font-semibold px-2 mb-1">Rooms</h3>
+        )}
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 w-full">
-          {rooms.map((room) => (
-            <button
-              key={room.rid}
-              onClick={() => onSelectRoom(room.rid)}
-              className={`${baseStyle} ${
-                activeRoomId === room.rid
-                  ? activeStyle
-                  : "hover:bg-slate-700 text-slate-300"
-              } ${sidebarVisible ? "justify-start px-4" : "justify-center px-2"}`}
-              title={!sidebarVisible ? room.name : ""}
-            >
-              <MessageSquareText className="w-5 h-5" />
-              {sidebarVisible && <span className="truncate">{room.name}</span>}
-            </button>
-          ))}
+          {rooms
+  .filter((room) => room.type !== "dm") // exclude DMs from Rooms section
+  .map((room) => {
+    const isActive = activeRoomId === room.rid;
+    const displayName = room.name;
+
+    return (
+      <button
+        key={room.rid}
+        onClick={() => onSelectRoom(room.rid)}
+        className={`${baseStyle} ${
+          isActive
+            ? activeStyle
+            : "hover:bg-slate-700 text-slate-300"
+        } ${sidebarVisible ? "justify-start px-4" : "justify-center px-2"}`}
+        title={!sidebarVisible ? displayName : ""}
+      >
+        <MessageSquareText className="w-5 h-5" />
+        {sidebarVisible && (
+          <span className="truncate">{displayName}</span>
+        )}
+      </button>
+    );
+  })}
+
         </div>
 
         {/* Create Room */}
