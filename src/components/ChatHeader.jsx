@@ -16,16 +16,12 @@ export default function ChatHeader({
     <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700 relative">
       <div>
         <h2 className="text-lg font-semibold text-slate-100 truncate pl-3">
-          {isDM
-            ? members.find((m) => m.username !== typingUsers[0]?.username)
-                ?.username || "Direct Message"
-            : roomName}
+          {roomName}
         </h2>
-        {isDM ? 
-        (
-          <div className="text-sm text-slate-400 pl-3">typing…</div>
-        ) : typingUsers.length > 0 && (
-          <div className="text-sm text-slate-400 pl-3">typing…</div>
+        {typingUsers.length > 0 && (
+          <div className="text-sm text-slate-400 pl-3">
+            {typingUsers.map((u) => u.username).join(", ")} typing…
+          </div>
         )}
       </div>
 
