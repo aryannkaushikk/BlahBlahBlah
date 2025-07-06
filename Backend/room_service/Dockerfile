@@ -1,28 +1,24 @@
 # Use official Python slim image as base
 FROM python:3.11-slim
 
-# Set environment variables inside container
+# Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
-# Set PYTHONPATH so Python can find shared module
 ENV PYTHONPATH=/app
 
-# Set working directory inside container
-WORKDIR /app/room_service
+# Set working directory
+WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
-COPY ./room_service/requirements.txt /app/room_service/
-
-# Upgrade pip and install dependencies
+# Copy and install dependencies
+COPY requirements.txt .
 RUN pip install --upgrade pip
-RUN pip install -r /app/room_service/requirements.txt
+RUN pip install -r requirements.txt
 
-# Copy the API source code
-COPY ./room_service /app/room_service
+# Copy the full service source code
+COPY . .
 
-# Expose port your app runs on
+# Expose Flask service port
 EXPOSE 5800
 
-# Command to run your app
+# Run the app with gunicorn
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5800", "main:app"]
