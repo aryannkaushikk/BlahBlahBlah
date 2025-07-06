@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # api_backend:
+  #   build:
+  #     context: .
+  #     dockerfile: api/Dockerfile
+  #   container_name: api
+  #   ports:
+  #     - "5100:5100"
+  #   depends_on:
+  #     - room_service
+  #   networks:
+  #     - chat_network
+
+  room_service:
+    build:
+      context: .
+      dockerfile: room_service/Dockerfile
+    container_name: room_service
+    ports:
+      - "5800:5800"
+    networks:
+      - chat_network
+
+  message_service:
+    build:
+      context: .
+      dockerfile: message_service/Dockerfile
+    container_name: message_service
+    ports:
+      - "5600:5600"
+    networks:
+      - chat_network
+
+  chat_service:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    container_name: chat_service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - room_service
+      - message_service
+    networks:
+      - chat_network
+
+networks:
+  chat_network:
+    driver: bridge
