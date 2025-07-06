@@ -111,7 +111,7 @@ export default function Sidebar({
         {/* Logo */}
         <div className="mb-6 flex justify-center">
           <img
-            src="/barLogo.png"
+            src="./barLogo.png"
             alt="Logo"
             className={`rounded-full transition-all duration-300 ${
               sidebarVisible ? "w-20 h-20" : "w-12 h-12"

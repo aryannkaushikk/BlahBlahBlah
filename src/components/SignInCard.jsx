@@ -37,7 +37,7 @@ export default function SignInCard() {
           onClick={() => navigate("/")}
           className="block mx-auto cursor-pointer"
         >
-          <img alt="Logo" src="/barLogo.png" className="h-20 w-auto" />
+          <img alt="Logo" src="./barLogo.png" className="h-20 w-auto" />
         </button>
 
         <h2 className="mt-3 text-center text-2xl font-bold tracking-tight text-slate-100">
