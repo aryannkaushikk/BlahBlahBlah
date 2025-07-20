@@ -52,6 +52,22 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  const signInWithGitHub = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -64,7 +80,18 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, uid, token, username, loading, signUp, signIn, logout }}
+      value={{
+        user,
+        uid,
+        username,
+        token,
+        loading,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signInWithGitHub,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
