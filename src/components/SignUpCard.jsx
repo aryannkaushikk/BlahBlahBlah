@@ -90,16 +90,17 @@ export default function SignUpCard() {
             <p className="text-sm text-red-500 font-medium">{error.message}</p>
           )}
 
-            <div>
+          <div>
             <button
               type="submit"
               disabled={isPending}
               className="flex w-full justify-center items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
             >
-              {isPending && (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {isPending ? (
+                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Sign up"
               )}
-              {isPending ? "Signing up..." : "Sign up"}
             </button>
           </div>
         </form>

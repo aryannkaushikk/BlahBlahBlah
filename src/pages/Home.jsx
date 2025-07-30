@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Spline from "@splinetool/react-spline";
 import BlurText from "../components/BlurText";
 
-export default function Home() {
+export default function Home( { onGetStarted } ) {
   const [loaded, setLoaded] = useState(false);
   const navigate = useNavigate();
 
@@ -52,11 +52,15 @@ export default function Home() {
           </p>
 
           <button
-            onClick={() => navigate("/signin")}
-            className="mt-6 bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl text-white text-lg transition duration-200"
-          >
-            Start Chatting
-          </button>
+  onClick={() => {
+    if (typeof onGetStarted === "function") onGetStarted();
+    else navigate("/signin"); // fallback in case it's not passed
+  }}
+  className="mt-6 bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl text-white text-lg transition duration-200"
+>
+  Start Chatting
+</button>
+
         </div>
       )}
 

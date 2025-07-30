@@ -21,7 +21,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # Flask App Setup
 # ------------------------------------------
 app = Flask(__name__)
-CORS(app, origins=["https://blah-blah-blah-two.vercel.app"])
+CORS(app, origins=["https://blah-blah-blah-two.vercel.app", "http://localhost:5173"])
 
 # ------------------------------------------
 # JWT Auth Middleware
@@ -48,7 +48,7 @@ def verify_token(f):
 # ------------------------------------------
 @app.route('/healthz')
 def health():
-    print("✅ Health check hit")
+    print("✅ Room Service Health check hit")
     return jsonify({"status": "Room Service Alive"}), 200
 
 # ------------------------------------------

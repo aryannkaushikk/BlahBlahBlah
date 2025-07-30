@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import redis
 import requests
 import jwt
+from flask_cors import CORS
 
 # ------------------------------------------
 # Environment Setup
@@ -27,7 +28,8 @@ redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 # Flask App + Socket.IO Setup
 # ------------------------------------------
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins=["https://blah-blah-blah-two.vercel.app", "http://localhost:5173"])
+CORS(app, origins=["https://blah-blah-blah-two.vercel.app", "http://localhost:5173"])
 
 # ------------------------------------------
 # Health Check
@@ -36,6 +38,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 def ping():
     try:
         redis_client.set("Health", "1", ex=60)
+        print("✅ Chat Service Health check hit")
         return jsonify({"Status": "Chat Service and Redis Alive"}), 200
     except redis.RedisError:
         return jsonify({"Error": "Redis Issue"}), 500

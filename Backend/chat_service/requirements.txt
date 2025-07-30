@@ -6,3 +6,4 @@ requests==2.32.3
 gunicorn==23.0.0
 eventlet==0.39.1
 PyJWT==2.10.1
+flask-cors==6.0.0

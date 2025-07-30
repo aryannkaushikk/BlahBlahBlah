@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from supabase import create_client, Client
+from flask_cors import CORS
 
 # ------------------------------------------
 # Environment Setup
@@ -15,13 +16,14 @@ supabase: Client = create_client(url, key)
 # Flask App Initialization
 # ------------------------------------------
 app = Flask(__name__)
+CORS(app, origins=["https://blah-blah-blah-two.vercel.app", "http://localhost:5173", "https://bbb-chat-service.onrender.com", "http://localhost:8080"])
 
 # ------------------------------------------
 # Health Check
 # ------------------------------------------
 @app.route('/healthz')
 def health_check():
-    print("✅ Message service health check called")
+    print("✅ Message Service Health check hit")
     return jsonify({"Status": "Message Service Alive"}), 200
 
 # ------------------------------------------

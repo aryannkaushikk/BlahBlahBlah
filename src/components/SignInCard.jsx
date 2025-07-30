@@ -23,10 +23,7 @@ export default function SignInCard() {
     onSuccess: () => navigate("/chat"),
   });
 
-  const {
-    mutate: googleSignIn,
-    isPending: googlePending,
-  } = useMutation({
+  const { mutate: googleSignIn, isPending: googlePending } = useMutation({
     mutationFn: signInWithGoogle,
     onSuccess: () => navigate("/chat"),
   });
@@ -47,7 +44,10 @@ export default function SignInCard() {
   return (
     <div className="flex min-h-full flex-col justify-center px-3 py-6 md:px-6 md:py-12 lg:px-8 w-2xs md:w-md bg-[#161b22] rounded-xl shadow-xl border border-slate-700">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <button onClick={() => navigate("/")} className="block mx-auto cursor-pointer">
+        <button
+          onClick={() => navigate("/")}
+          className="block mx-auto cursor-pointer"
+        >
           <img alt="Logo" src="/barLogo.png" className="h-20 w-auto" />
         </button>
 
@@ -57,12 +57,14 @@ export default function SignInCard() {
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm p-6 bg-[#0e1117] rounded-xl border border-slate-800 space-y-6">
-
         {/* Email & Password Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-slate-300"
+            >
               Email address
             </label>
             <div className="mt-2">
@@ -83,11 +85,17 @@ export default function SignInCard() {
           {/* Password */}
           <div>
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-300"
+              >
                 Password
               </label>
               <div className="text-sm">
-                <a href="#" className="font-semibold text-blue-400 hover:underline">
+                <a
+                  href="#"
+                  className="font-semibold text-blue-400 hover:underline"
+                >
                   Forgot password?
                 </a>
               </div>
@@ -119,10 +127,11 @@ export default function SignInCard() {
               disabled={isPending}
               className="flex w-full justify-center items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
             >
-              {isPending && (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {isPending ? (
+                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Sign in"
               )}
-              {isPending ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>
@@ -151,11 +160,13 @@ export default function SignInCard() {
         {/* Sign up prompt */}
         <p className="mt-8 text-center text-sm text-slate-400">
           Not a member?{" "}
-          <button onClick={toSignUp} className="font-semibold text-blue-400 hover:underline">
+          <button
+            onClick={toSignUp}
+            className="font-semibold text-blue-400 hover:underline"
+          >
             SignUp
           </button>
         </p>
-
       </div>
     </div>
   );
